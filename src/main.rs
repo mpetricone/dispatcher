@@ -1,26 +1,55 @@
-use futures_util::StreamExt;
-use kalosm_sound::{rodio::Source, *};
+use voice_stream::VoiceStream;
+use voice_stream::cpal::traits::StreamTrait;
+use vosk::{Model, Recognizer};
+
+trait AudioThunk {
+    fn to_i16(&self) -> Vec<i16>;
+}
+
+trait AudioThunk2 {
+    fn to_i16_a(&self) -> Vec<i16>;
+}
+
+impl AudioThunk for Vec<f32> {
+    fn to_i16(&self) -> Vec<i16> {
+        let mut newv = Vec::with_capacity(self.len());
+
+        for val in self {
+            newv.push((val.clamp(-1.0, 1.0) * 3276.0) as i16);
+        }
+
+        newv
+    }
+}
+
+impl AudioThunk2 for Vec<f32> {
+    fn to_i16_a(&self) -> Vec<i16> {
+        self.into_iter()
+            .map(|v| (v.clamp(-1.0, 1.0) * 3276.0) as i16)
+            .collect::<Vec<i16>>()
+    }
+}
 
 #[tokio::main]
-async fn main() -> Result<(), anyhow::Error> {
-    let mic = MicInput::default();
+async fn main() {
+    let vmodel = Model::new("./vosk-model-small-en-us-0.15").unwrap();
+    let mut vrec = Recognizer::new(&vmodel, 16000.0).unwrap();
 
-    let stream = mic.stream();
+    let (voice_stream, mut rx) = VoiceStream::default_device().unwrap();
 
-    let vad = stream.voice_activity_stream();
-    let mut audio_chunks = vad.rechunk_voice_activity();
+    voice_stream.play().unwrap();
 
-    while let Some(input) = audio_chunks.next().await {
-        println!(
-            "New voice activity chunk wityh duration {:?}",
-            input.total_duration()
-        );
-        let mut ts = input.transcribe(Whisper::new().await?);
+    loop {
+        match rx.recv().await {
+            Some(samples) => {
+                if samples.len() > 0 {
+                    println!("Samples size: {}", samples.len());
+                    let _ = vrec.accept_waveform(&samples.to_i16());
 
-        while let Some(text) = ts.next().await {
-            println!("{}", text.text());
+                    println!("{:#?}", vrec.final_result());
+                }
+            }
+            _ => {}
         }
     }
-
-    Ok(())
 }
