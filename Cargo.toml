@@ -6,6 +6,8 @@ edition = "2024"
 [dependencies]
 anyhow = "1.0.100"
 ort-sys = { version = "=2.0.0-rc.4", features = ["download-binaries", "copy-dylibs"] }
-tokio = { version = "1",features = ["full"]}
+rdev = { path="../rdev/", features = ["serialize", "x11"] }
+serde = { version = "1.0.228", features = ["derive"] }
+tokio = { version = "1", features = ["full"]}
 voice-stream = "0.4.0"
 vosk = "0.3.1"

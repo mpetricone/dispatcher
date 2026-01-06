@@ -1,3 +1,5 @@
+use rdev::{Event, EventType, listen};
+use std::{thread, time::Duration};
 use voice_stream::VoiceStream;
 use voice_stream::cpal::traits::StreamTrait;
 use vosk::{Model, Recognizer};
@@ -30,8 +32,9 @@ impl AudioThunk2 for Vec<f32> {
     }
 }
 
-#[tokio::main]
-async fn main() {
+/// Test of voice recognition
+/// I am happy with it at this point, except for the need to thunk to Vosk
+async fn _voicereq_trial() {
     let vmodel = Model::new("./vosk-model-small-en-us-0.15").unwrap();
     let mut vrec = Recognizer::new(&vmodel, 16000.0).unwrap();
 
@@ -52,4 +55,23 @@ async fn main() {
             _ => {}
         }
     }
+}
+
+fn input_callback(event: Event) {
+    match event.event_type {
+        EventType::KeyPress(k) => {
+            println!("user wrote {:?}", k);
+            stop_listening();
+        }
+        _ => (),
+    }
+}
+
+fn main() {
+    thread::spawn(|| {
+        if let Err(error) = listen(input_callback) {
+            println!("Error initializing input capture {:?}", error);
+        }
+    });
+    thread::sleep(Duration::from_secs(10));
 }
