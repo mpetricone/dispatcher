@@ -1,4 +1,4 @@
-use rdev::{Event, EventType, listen};
+use rdev::{Event, EventType, listen, stop_listening};
 use std::{thread, time::Duration};
 use voice_stream::VoiceStream;
 use voice_stream::cpal::traits::StreamTrait;
