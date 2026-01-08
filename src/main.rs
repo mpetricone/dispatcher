@@ -1,8 +1,9 @@
-use rdev::{Event, EventType, listen, stop_listening};
+use rdev::{stop_listening, EventType::KeyPress, EventType, EventType::KeyRelease};
 use std::{thread, time::Duration};
 use voice_stream::VoiceStream;
 use voice_stream::cpal::traits::StreamTrait;
 use vosk::{Model, Recognizer};
+use dispatcher::input_recorder;
 
 trait AudioThunk {
     fn to_i16(&self) -> Vec<i16>;
@@ -57,21 +58,21 @@ async fn _voicereq_trial() {
     }
 }
 
-fn input_callback(event: Event) {
-    match event.event_type {
-        EventType::KeyPress(k) => {
-            println!("user wrote {:?}", k);
-            stop_listening();
-        }
-        _ => (),
-    }
-}
+
 
 fn main() {
-    thread::spawn(|| {
-        if let Err(error) = listen(input_callback) {
-            println!("Error initializing input capture {:?}", error);
-        }
-    });
+    let keys = input_recorder::record_sequence();
     thread::sleep(Duration::from_secs(10));
+    stop_listening();
+    if let Ok(e) = keys {
+        print!("\n\r");
+        for k in e.lock().unwrap().iter() {
+            match k.event_type {
+                KeyPress(k) =>  print!("{:?}", k),
+                KeyRelease(k) => print!("<KR>{:?}</KR>",k),
+                _ => (),
+            }
+        }
+        print!("\n\r");
+    }
 }
