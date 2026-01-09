@@ -58,8 +58,6 @@ async fn _voicereq_trial() {
     }
 }
 
-
-
 fn main() {
     let keys = input_recorder::record_sequence();
     thread::sleep(Duration::from_secs(10));
