@@ -59,18 +59,14 @@ async fn _voicereq_trial() {
 }
 
 fn main() {
-    let keys = input_recorder::record_sequence();
+    let keys = input_recorder::record_sequence().unwrap();
     thread::sleep(Duration::from_secs(10));
     stop_listening();
-    if let Ok(e) = keys {
-        print!("\n\r");
-        for k in e.lock().unwrap().iter() {
-            match k.event_type {
-                KeyPress(k) =>  print!("{:?}", k),
-                KeyRelease(k) => print!("<KR>{:?}</KR>",k),
-                _ => (),
-            }
-        }
-        print!("\n\r");
+    println!("listening stopped");
+    let normalized_keys = input_recorder::normalize_sequence(keys).unwrap();
+    print!("\n\r");
+    for k in normalized_keys {
+        println!("{:?}", k);
     }
+    print!("\n\r");
 }
