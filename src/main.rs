@@ -1,9 +1,9 @@
-use rdev::{stop_listening, EventType::KeyPress, EventType, EventType::KeyRelease};
+use dispatcher::input_recorder;
+use rdev::{EventType, EventType::KeyPress, EventType::KeyRelease, stop_listening};
 use std::{thread, time::Duration};
 use voice_stream::VoiceStream;
 use voice_stream::cpal::traits::StreamTrait;
 use vosk::{Model, Recognizer};
-use dispatcher::input_recorder;
 
 trait AudioThunk {
     fn to_i16(&self) -> Vec<i16>;
@@ -64,9 +64,8 @@ fn main() {
     stop_listening();
     println!("listening stopped");
     let normalized_keys = input_recorder::normalize_sequence(keys).unwrap();
+    let json_out = serde_json::to_string(&normalized_keys).unwrap();
     print!("\n\r");
-    for k in normalized_keys {
-        println!("{:?}", k);
-    }
+    println!("{}", json_out);
     print!("\n\r");
 }
