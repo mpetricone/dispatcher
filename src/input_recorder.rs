@@ -1,5 +1,6 @@
 use rdev::{
-    EventType::{KeyPress, KeyRelease},
+    Key,
+    EventType::{ KeyPress, KeyRelease},
     ListenError, listen,
 };
 use serde::{Deserialize, Serialize};
@@ -60,6 +61,14 @@ impl InputEvent {
     }
 }
 
+const CONTROLKEYS: [Key; 6] = [
+    Key::ShiftLeft,
+    Key::ShiftRight,
+    Key::ControlLeft,
+    Key::ControlRight,
+    Key::MetaLeft,
+    Key::MetaRight];
+
 /// Takes a Vec of [rdev::Event] and returns a more usable format.
 ///
 /// Durations to [rdev::EventType::KeyPress] are calculated.
@@ -93,11 +102,14 @@ pub fn normalize_sequence(
                             None,
                             guard[index + np].time,
                         ));
-                        event_chain.push(InputEvent::new(
-                            KeyPress(e),
-                            Some(guard[np + index].time.duration_since(cur.time).unwrap()),
-                            guard[index].time,
-                        ));
+                        let is_ctrl_key = CONTROLKEYS.iter().find(|x| **x==e);
+                        if is_ctrl_key == None {
+                            event_chain.push(InputEvent::new(
+                                KeyPress(e),
+                                Some(guard[np + index].time.duration_since(cur.time).unwrap()),
+                                guard[index].time,
+                            ));
+                        } else { event_chain.push(InputEvent::new(KeyPress(e), None, guard[index].time))}
                     } else {
                         event_chain.push(InputEvent::new(KeyPress(e), None, guard[index].time))
                     }
