@@ -1,5 +1,7 @@
 use dispatcher::input_recorder;
-use rdev::{EventType, EventType::KeyPress, EventType::KeyRelease, stop_listening};
+use rdev::stop_listening;
+use std::fs::File;
+use std::io::Write;
 use std::{thread, time::Duration};
 use voice_stream::VoiceStream;
 use voice_stream::cpal::traits::StreamTrait;
@@ -66,6 +68,7 @@ fn main() {
     let normalized_keys = input_recorder::normalize_sequence(keys).unwrap();
     let json_out = serde_json::to_string(&normalized_keys).unwrap();
     print!("\n\r");
-    println!("{}", json_out);
+    let mut file = File::create("testoutput.json").unwrap();
+    file.write_all(json_out.as_bytes()).unwrap();
     print!("\n\r");
 }
