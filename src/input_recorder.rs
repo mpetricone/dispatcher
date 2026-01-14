@@ -1,16 +1,25 @@
 use rdev::{
-    Event,
-    EventType::{self, KeyPress, KeyRelease},
-    Key, ListenError, listen,
+    EventType::{KeyPress, KeyRelease},
+    ListenError, listen,
 };
 use serde::{Deserialize, Serialize};
 use std::thread;
 use std::time::{Duration, SystemTime};
 use std::{
-    process::ExitStatus,
     sync::{Arc, Mutex},
 };
 
+/// Records keyboard input
+///
+/// Returns a vector of raw input information.
+/// There will be multple KeyPress events, with timestamps,
+/// but no durations.
+///
+/// you may want to call [normalize_sequence] to
+/// get a more usefull event sequence.
+///
+/// events are capturd in a seperate thread until
+/// [rdev::stop_listening] is called
 pub fn record_sequence() -> Result<Arc<Mutex<Vec<rdev::Event>>>, ListenError> {
     let sequence = Arc::new(Mutex::new(vec![]));
     let rs = sequence.clone();
@@ -23,10 +32,17 @@ pub fn record_sequence() -> Result<Arc<Mutex<Vec<rdev::Event>>>, ListenError> {
     return Ok(sequence.clone());
 }
 
+/// Used to retain data of [rdev::EventType] data with durations
+///
+/// returned by [normalize_sequence] for cleaner keypress data
+/// as the X11 system returns quite a few extraneous events, without
+/// duration context
+///
+/// These are serializable for long term storage
 #[derive(Debug, Serialize, Deserialize)]
 pub struct InputEvent {
-    event_type: rdev::EventType,
-    duration: Option<Duration>,
+    pub event_type: rdev::EventType,
+    pub duration: Option<Duration>,
     time: SystemTime,
 }
 
@@ -44,6 +60,13 @@ impl InputEvent {
     }
 }
 
+/// Takes a Vec of [rdev::Event] and returns a more usable format.
+///
+/// Durations to [rdev::EventType::KeyPress] are calculated.
+/// Mouse events, Non Key related events, duplicate [rdev::EventType::KeyPress]
+/// are all removed.
+///
+/// Order of normalized events is retained.
 pub fn normalize_sequence(
     raw_seq: Arc<Mutex<Vec<rdev::Event>>>,
 ) -> Result<Vec<InputEvent>, String> {
@@ -95,11 +118,11 @@ pub fn normalize_sequence(
     return Err("Could not unlock the Arc".to_string());
 }
 
-fn input_callback(event: Event) {
-    match event.event_type {
-        EventType::KeyPress(k) => {
-            println!("user wrote {:?}", k);
-        }
-        _ => (),
-    }
-}
+//fn input_callback(event: Event) {
+//    match event.event_type {
+//        EventType::KeyPress(k) => {
+//            println!("user wrote {:?}", k);
+//        }
+//        _ => (),
+//    }
+//}

@@ -1,11 +1,10 @@
-use dispatcher::input_recorder;
+use dispatcher::{input_recorder, input_dispatcher::send_input_sequence};
 use rdev::stop_listening;
-use std::fs::File;
-use std::io::Write;
 use std::{thread, time::Duration};
 use voice_stream::VoiceStream;
 use voice_stream::cpal::traits::StreamTrait;
 use vosk::{Model, Recognizer};
+use std::sync::{ Arc, Mutex};
 
 trait AudioThunk {
     fn to_i16(&self) -> Vec<i16>;
@@ -22,7 +21,6 @@ impl AudioThunk for Vec<f32> {
         for val in self {
             newv.push((val.clamp(-1.0, 1.0) * 3276.0) as i16);
         }
-
         newv
     }
 }
@@ -66,9 +64,8 @@ fn main() {
     stop_listening();
     println!("listening stopped");
     let normalized_keys = input_recorder::normalize_sequence(keys).unwrap();
-    let json_out = serde_json::to_string(&normalized_keys).unwrap();
     print!("\n\r");
-    let mut file = File::create("testoutput.json").unwrap();
-    file.write_all(json_out.as_bytes()).unwrap();
+    let arc_sequence = Arc::new(Mutex::new(normalized_keys));
+    send_input_sequence(arc_sequence.clone(), Duration::from_millis(30)).unwrap();
     print!("\n\r");
 }
