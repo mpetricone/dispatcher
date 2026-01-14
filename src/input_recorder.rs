@@ -83,7 +83,7 @@ pub fn normalize_sequence(
         let mut event_chain: Vec<InputEvent> = vec![];
         let mut open_events: Vec<InputEvent> = vec![];
         let mut index = 0;
-        while index < guard.len() {
+        'outer: while index < guard.len() {
             let cur = &guard[index];
             match cur.event_type {
                 KeyPress(e) => {
@@ -91,7 +91,7 @@ pub fn normalize_sequence(
                     if let Some(_pos) = open_events.iter().position(|x| x.event_type == KeyPress(e))
                     {
                         index += 1;
-                        continue;
+                        continue 'outer;
                     }
                     if let Some(np) = &guard[index..]
                         .iter()
@@ -106,7 +106,7 @@ pub fn normalize_sequence(
                         if is_ctrl_key == None {
                             event_chain.push(InputEvent::new(
                                 KeyPress(e),
-                                Some(guard[np + index].time.duration_since(cur.time).unwrap()),
+                                Some(guard[np + index].time.duration_since(cur.time).unwrap_or(Duration::from_secs(0))),
                                 guard[index].time,
                             ));
                         } else { event_chain.push(InputEvent::new(KeyPress(e), None, guard[index].time))}
