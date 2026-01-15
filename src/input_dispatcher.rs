@@ -6,7 +6,7 @@ use std::error::Error;
 /// This takes a Vec of InputEvent and sends them to the OS/GUI in order.
 ///
 ///
-/// It will ignore [InputEvent] of less than 500millis, instead using the delay between events
+/// It will ignore [InputEvent] of less than = 500millis, instead using the delay between events
 /// I don't think it's necessary to place the duration behind a Arc-mutex
 ///
 /// Currently, we are only processing keyboard events
