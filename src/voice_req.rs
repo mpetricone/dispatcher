@@ -35,7 +35,7 @@ impl AudioThunk2 for Vec<f32> {
 
 /// Test of voice recognition
 /// I am happy with it at this point, except for the need to thunk to Vosk
-async fn voicereq_trial(vr_context: &VoiceReqContext) -> Result<(), Box<dyn Error>> {
+async fn voice_req_loop(vr_context: &VoiceReqContext) -> Result<(), Box<dyn Error>> {
     let vmodel = Model::new("./vosk-model-small-en-us-0.15").unwrap();
     let mut vrec = Recognizer::new(&vmodel, 16000.0).unwrap();
 
@@ -57,9 +57,7 @@ async fn voicereq_trial(vr_context: &VoiceReqContext) -> Result<(), Box<dyn Erro
                 _ => {}
             }
             if let Some(heard) = vrec.final_result().single() {
-                if vr_context.listen_for.contains(&heard.text.to_string()) {
-                    vr_context.tx_results.send(VoiceReqResults::Recognized(heard.text.to_string()))?;
-                }
+                vr_context.tx_results.send(VoiceReqResults::Recognized(heard.text.to_string()))?;
             }
         }
     }
@@ -79,22 +77,19 @@ pub enum VoiceReqResults {
     Halting,
 }
 
-struct VoiceReqContext {
+pub struct VoiceReqContext {
     tx_results: mpsc::Sender<VoiceReqResults>,
     rx_commands: mpsc::Receiver<VoiceReqCommands>,
-    listen_for: Vec<String>,
 }
 
 pub fn start_voice_req(
-    listen_for: Vec<String>,
     rx_commands: mpsc::Receiver<VoiceReqCommands>,
     tx_results: mpsc::Sender<VoiceReqResults>) -> Result<JoinHandle<()>, Box<dyn Error>> {
         let vr = VoiceReqContext{
             rx_commands,
             tx_results,
-            listen_for,
         };
         Ok(thread::spawn( move || {
-            voicereq_trial(&vr);
+            voice_req_loop(&vr);
         }))
     }

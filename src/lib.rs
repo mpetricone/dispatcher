@@ -24,3 +24,5 @@
 pub mod input_recorder;
 pub mod input_dispatcher;
 pub mod voice_req;
+pub mod action_record;
+pub mod primary_dispatcher;
