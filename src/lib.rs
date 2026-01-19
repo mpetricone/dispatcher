@@ -23,3 +23,4 @@
 //!
 pub mod input_recorder;
 pub mod input_dispatcher;
+pub mod voice_req;
