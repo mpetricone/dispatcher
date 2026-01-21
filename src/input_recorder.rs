@@ -40,7 +40,7 @@ pub fn record_sequence() -> Result<Arc<Mutex<Vec<rdev::Event>>>, ListenError> {
 /// duration context
 ///
 /// These are serializable for long term storage
-#[derive(Debug, Serialize, Deserialize)]
+#[derive(Debug, Serialize, Deserialize, Clone, Copy)]
 pub struct InputEvent {
     pub event_type: rdev::EventType,
     pub duration: Option<Duration>,

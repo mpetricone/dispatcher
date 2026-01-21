@@ -304,6 +304,7 @@ dependencies = [
  "rdev",
  "serde",
  "serde_json",
+ "tokio",
  "voice-stream",
  "vosk",
 ]

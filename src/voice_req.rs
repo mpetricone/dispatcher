@@ -1,18 +1,18 @@
-use std::sync::{mpsc};
-use std::thread::JoinHandle;
 use std::thread;
 use std::error::Error;
 use voice_stream::VoiceStream;
 use voice_stream::cpal::traits::StreamTrait;
 use vosk::{Model, Recognizer};
+use tokio::sync::mpsc;
 
+/// # Vosk requires i16 audio data, but we can only capture in f32
 trait AudioThunk {
     fn to_i16(&self) -> Vec<i16>;
 }
 
-trait AudioThunk2 {
-    fn to_i16_a(&self) -> Vec<i16>;
-}
+//trait AudioThunk2 {
+//    fn to_i16_a(&self) -> Vec<i16>;
+//}
 
 impl AudioThunk for Vec<f32> {
     fn to_i16(&self) -> Vec<i16> {
@@ -25,17 +25,19 @@ impl AudioThunk for Vec<f32> {
     }
 }
 
-impl AudioThunk2 for Vec<f32> {
-    fn to_i16_a(&self) -> Vec<i16> {
-        self.into_iter()
-            .map(|v| (v.clamp(-1.0, 1.0) * 3276.0) as i16)
-            .collect::<Vec<i16>>()
-    }
-}
+//impl AudioThunk2 for Vec<f32> {
+//    fn to_i16_a(&self) -> Vec<i16> {
+//        self.into_iter()
+//            .map(|v| (v.clamp(-1.0, 1.0) * 3276.0) as i16)
+//            .collect::<Vec<i16>>()
+//    }
+//}
 
-/// Test of voice recognition
-/// I am happy with it at this point, except for the need to thunk to Vosk
-async fn voice_req_loop(vr_context: &VoiceReqContext) -> Result<(), Box<dyn Error>> {
+/// # Voice recognition main loop.
+/// I am happy with it at this point, except for the need to thunk to Vosk.
+/// I suspect the thunking may be causing delays, but I have not found a
+/// microphone input library that records data as i16
+async fn voice_req_loop(vr_context: &mut VoiceReqContext) -> Result<(), Box<dyn Error>> {
     let vmodel = Model::new("./vosk-model-small-en-us-0.15").unwrap();
     let mut vrec = Recognizer::new(&vmodel, 16000.0).unwrap();
 
@@ -57,13 +59,16 @@ async fn voice_req_loop(vr_context: &VoiceReqContext) -> Result<(), Box<dyn Erro
                 _ => {}
             }
             if let Some(heard) = vrec.final_result().single() {
-                vr_context.tx_results.send(VoiceReqResults::Recognized(heard.text.to_string()))?;
+                vr_context.tx_results.send(VoiceReqResults::Recognized(heard.text.to_string())).await?;
             }
         }
     }
     Ok(())
 }
 
+/// # Commands sent to the voce recognition thread.
+///
+/// Currently not fully implemented.
 #[derive(PartialEq)]
 pub enum VoiceReqCommands {
     Stop,
@@ -71,25 +76,36 @@ pub enum VoiceReqCommands {
     Start,
 }
 
+/// # Results sent by {start_voice_req}
+///
+/// Recognized will be sent for any succesfully transcribed voice events
+/// Halting will be sent when the thread determines it is shutting down.
 #[derive(PartialEq)]
 pub enum VoiceReqResults {
     Recognized(String),
     Halting,
 }
 
+/// # Settings and channels used by the voice recognizer
 pub struct VoiceReqContext {
     tx_results: mpsc::Sender<VoiceReqResults>,
     rx_commands: mpsc::Receiver<VoiceReqCommands>,
 }
 
-pub fn start_voice_req(
+/// # Start a thread for voice recognition.
+/// excepts a couple channels to be setup first
+///
+/// This function reports results on any voice recognition
+/// for command processing, look at {primary_dispatcher}
+pub async fn start_voice_req(
     rx_commands: mpsc::Receiver<VoiceReqCommands>,
-    tx_results: mpsc::Sender<VoiceReqResults>) -> Result<JoinHandle<()>, Box<dyn Error>> {
-        let vr = VoiceReqContext{
+    tx_results: mpsc::Sender<VoiceReqResults>) -> Result<(), Box<dyn Error>> {
+        let mut vr = VoiceReqContext{
             rx_commands,
             tx_results,
         };
-        Ok(thread::spawn( move || {
-            voice_req_loop(&vr);
-        }))
+        thread::spawn(async move || -> Result<(), Box<dyn Error>> {
+            voice_req_loop(&mut vr).await
+        });
+        Ok(())
     }

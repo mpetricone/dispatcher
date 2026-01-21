@@ -4,9 +4,9 @@ use serde::{Serialize, Deserialize};
 /// # Everything needed to hold an action
 #[derive(Serialize, Deserialize)]
 pub struct ActionRecord {
-    name: String,
-    activator_text: String,
-    action_stream: Vec<InputEvent>,
+    pub name: String,
+    pub activator_text: String,
+    pub action_stream: Vec<InputEvent>,
     // Placeholder Audio output
 }
 
