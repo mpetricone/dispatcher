@@ -7,6 +7,9 @@
 //! ## Start here
 //! KB IO, voice detection working seperatly, began work on integrating those parts through [primary_dispatcher] and [action_profile].
 //!
+//! Please note I use <https://github.com/mpetricone/rdev> which is a fork of <https://github.com/Narsil/rdev>
+//! The original did not have a way to end input capture that I could find.
+//!
 //! I've test vosk to ensure somewhat reliable voice detection.
 //! ## Next Up
 //! 1. Threading to enable simultaneous voice input/output, key detection and key simulation.
