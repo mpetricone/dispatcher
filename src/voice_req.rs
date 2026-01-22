@@ -1,20 +1,22 @@
-use std::thread;
 use std::error::Error;
+use std::thread;
+use tokio::sync::mpsc;
 use voice_stream::VoiceStream;
 use voice_stream::cpal::traits::StreamTrait;
 use vosk::{Model, Recognizer};
-use tokio::sync::mpsc;
 
 /// # Vosk requires i16 audio data, but we can only capture in f32
 trait AudioThunk {
     fn to_i16(&self) -> Vec<i16>;
 }
 
+// /// Google found this, but I don't understand it as well as AudioThunk
 //trait AudioThunk2 {
 //    fn to_i16_a(&self) -> Vec<i16>;
 //}
 
 impl AudioThunk for Vec<f32> {
+    /// Note this has not been benchmarked
     fn to_i16(&self) -> Vec<i16> {
         let mut newv = Vec::with_capacity(self.len());
 
@@ -45,21 +47,26 @@ async fn voice_req_loop(vr_context: &mut VoiceReqContext) -> Result<(), Box<dyn 
 
     voice_stream.play().unwrap();
 
-    while let Some(r) = rx.recv().await  {
-        if r.len() > 0 {
+    while let Some(r) = rx.recv().await {
+        if !r.is_empty() {
             let _ = vrec.accept_waveform(&r.to_i16());
+            // Clippy, my fried, this is to allow future growth
+            #[allow(clippy::single_match)]
             match vr_context.rx_commands.try_recv() {
                 Ok(c) => {
                     if c == VoiceReqCommands::Stop {
-                        let _  = vr_context.tx_results.send(VoiceReqResults::Halting);
+                        let _ = vr_context.tx_results.send(VoiceReqResults::Halting).await;
                         rx.close();
                         continue;
                     }
-                },
+                }
                 _ => {}
             }
             if let Some(heard) = vrec.final_result().single() {
-                vr_context.tx_results.send(VoiceReqResults::Recognized(heard.text.to_string())).await?;
+                vr_context
+                    .tx_results
+                    .send(VoiceReqResults::Recognized(heard.text.to_string()))
+                    .await?;
             }
         }
     }
@@ -76,7 +83,7 @@ pub enum VoiceReqCommands {
     Start,
 }
 
-/// # Results sent by {start_voice_req}
+/// # Results sent by [start_voice_req]
 ///
 /// Recognized will be sent for any succesfully transcribed voice events
 /// Halting will be sent when the thread determines it is shutting down.
@@ -96,16 +103,15 @@ pub struct VoiceReqContext {
 /// excepts a couple channels to be setup first
 ///
 /// This function reports results on any voice recognition
-/// for command processing, look at {primary_dispatcher}
+/// for command processing, look at [crate::primary_dispatcher]
 pub async fn start_voice_req(
     rx_commands: mpsc::Receiver<VoiceReqCommands>,
-    tx_results: mpsc::Sender<VoiceReqResults>) -> Result<(), Box<dyn Error>> {
-        let mut vr = VoiceReqContext{
-            rx_commands,
-            tx_results,
-        };
-        thread::spawn(async move || -> Result<(), Box<dyn Error>> {
-            voice_req_loop(&mut vr).await
-        });
-        Ok(())
-    }
+    tx_results: mpsc::Sender<VoiceReqResults>,
+) -> Result<(), Box<dyn Error>> {
+    let mut vr = VoiceReqContext {
+        rx_commands,
+        tx_results,
+    };
+    thread::spawn(async move || -> Result<(), Box<dyn Error>> { voice_req_loop(&mut vr).await });
+    Ok(())
+}

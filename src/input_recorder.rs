@@ -1,14 +1,11 @@
 use rdev::{
-    Key,
-    EventType::{ KeyPress, KeyRelease},
-    ListenError, listen,
+    EventType::{KeyPress, KeyRelease},
+    Key, ListenError, listen,
 };
 use serde::{Deserialize, Serialize};
+use std::sync::{Arc, Mutex};
 use std::thread;
 use std::time::{Duration, SystemTime};
-use std::{
-    sync::{Arc, Mutex},
-};
 
 /// Records keyboard input
 ///
@@ -30,7 +27,7 @@ pub fn record_sequence() -> Result<Arc<Mutex<Vec<rdev::Event>>>, ListenError> {
         })
     });
 
-    return Ok(sequence.clone());
+    Ok(sequence.clone())
 }
 
 /// Used to retain data of [rdev::EventType] data with durations
@@ -67,7 +64,8 @@ const CONTROLKEYS: [Key; 6] = [
     Key::ControlLeft,
     Key::ControlRight,
     Key::MetaLeft,
-    Key::MetaRight];
+    Key::MetaRight,
+];
 
 /// Takes a Vec of [rdev::Event] and returns a more usable format.
 ///
@@ -102,14 +100,21 @@ pub fn normalize_sequence(
                             None,
                             guard[index + np].time,
                         ));
-                        let is_ctrl_key = CONTROLKEYS.iter().find(|x| **x==e);
-                        if is_ctrl_key == None {
+                        let is_ctrl_key = CONTROLKEYS.iter().find(|x| **x == e);
+                        if is_ctrl_key.is_none() {
                             event_chain.push(InputEvent::new(
                                 KeyPress(e),
-                                Some(guard[np + index].time.duration_since(cur.time).unwrap_or(Duration::from_secs(0))),
+                                Some(
+                                    guard[np + index]
+                                        .time
+                                        .duration_since(cur.time)
+                                        .unwrap_or(Duration::from_secs(0)),
+                                ),
                                 guard[index].time,
                             ));
-                        } else { event_chain.push(InputEvent::new(KeyPress(e), None, guard[index].time))}
+                        } else {
+                            event_chain.push(InputEvent::new(KeyPress(e), None, guard[index].time))
+                        }
                     } else {
                         event_chain.push(InputEvent::new(KeyPress(e), None, guard[index].time))
                     }
@@ -127,7 +132,7 @@ pub fn normalize_sequence(
         }
         return Ok(event_chain);
     }
-    return Err("Could not unlock the Arc".to_string());
+    Err("Could not unlock the Arc".to_string())
 }
 
 //fn input_callback(event: Event) {

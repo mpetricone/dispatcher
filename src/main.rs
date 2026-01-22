@@ -1,11 +1,10 @@
-use dispatcher::{input_recorder, input_dispatcher::send_input_sequence};
+use dispatcher::{input_dispatcher::send_input_sequence, input_recorder};
 use rdev::stop_listening;
 use std::{thread, time::Duration};
 
-use std::sync::{ Arc, Mutex};
+use std::sync::{Arc, Mutex};
 
-
-
+/// Currently a testbed
 fn main() {
     let keys = input_recorder::record_sequence().unwrap();
     thread::sleep(Duration::from_secs(10));

@@ -5,14 +5,16 @@
 //! with audio feedback if desired.
 //!
 //! ## Start here
-//! [input_dispatcher] and [input_recorder] are the only *mostly* working parts as of now.
+//! KB IO, voice detection working seperatly, began work on integrating those parts through [primary_dispatcher] and [action_profile].
 //!
 //! I've test vosk to ensure somewhat reliable voice detection.
 //! ## Next Up
-//! 1. More input testing
-//! 2. Threading to enable simultaneous voice input/output, key detection and key simulation.
-//! 3. Putting it togeter for functional use from a command line
-//! 4. GUI
+//! 1. Threading to enable simultaneous voice input/output, key detection and key simulation.
+//!     * work started
+//! 2. Putting it togeter for functional use from a command line
+//!     * work started
+//! 3. More input testing
+//! 4. GUI (leaning towards iced)
 //! 5. Voice playback on events - might swap with with 4.
 //!
 //! ## Current Design Limitations
@@ -21,8 +23,9 @@
 //! * Currently only supports keyboard capture and simulation.
 //! * Sorry Dispatcher does not support Wayland at this time. To keep the design simple, I decided to focus only on X11, since I still use it for reliability.
 //!
-pub mod input_recorder;
-pub mod input_dispatcher;
-pub mod voice_req;
+pub mod action_profile;
 pub mod action_record;
+pub mod input_dispatcher;
+pub mod input_recorder;
 pub mod primary_dispatcher;
+pub mod voice_req;
