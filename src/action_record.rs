@@ -7,7 +7,7 @@ use std::thread;
 use std::time::Duration;
 
 /// # Everything needed to hold an action
-#[derive(Serialize, Deserialize, Clone)]
+#[derive(Serialize, Deserialize, Clone, PartialEq, Debug)]
 pub struct ActionRecord {
     pub name: String,
     pub activator_text: String,

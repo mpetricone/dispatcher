@@ -28,6 +28,7 @@
 //!
 pub mod action_profile;
 pub mod action_record;
+pub mod file_io;
 pub mod input_dispatcher;
 pub mod input_recorder;
 pub mod primary_dispatcher;

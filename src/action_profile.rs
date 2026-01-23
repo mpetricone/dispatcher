@@ -7,15 +7,18 @@ use std::time::Duration;
 /// events dispatcher listens for, and the actions
 /// associated with that event. It will also store some profile
 /// settings.
-#[derive(Serialize, Deserialize, Clone)]
+#[derive(Serialize, Deserialize, Clone, PartialEq, Debug)]
 pub struct ActionProfile {
     pub actions: Vec<ActionRecord>,
     pub name: String,
 }
 
 impl ActionProfile {
-    pub fn new(actions: Vec<ActionRecord>, name: String) -> ActionProfile {
-        ActionProfile { actions, name }
+    pub fn new(actions: Vec<ActionRecord>, name: &str) -> ActionProfile {
+        ActionProfile {
+            actions,
+            name: name.to_string(),
+        }
     }
 
     /// Adds an Action record to profile, by recording keyboard and mouse events.
@@ -27,6 +30,20 @@ impl ActionProfile {
     ) -> Result<(), Box<dyn Error>> {
         let new_r = ActionRecord::build(name, activator_text, Duration::from_secs(10))?;
         self.actions.push(new_r);
+        Ok(())
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use crate::file_io;
+    #[test]
+    fn test_serialze_profile() -> Result<(), Box<dyn Error>> {
+        let ap1 = ActionProfile::new(vec![], "Test Profile");
+        file_io::to_file("target/debug/testprofile1.pro", true, &ap1)?;
+        let ap2 = file_io::from_file("target/debug/testprofile1.pro")?;
+        assert_eq!(ap1, ap2);
         Ok(())
     }
 }
