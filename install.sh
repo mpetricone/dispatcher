@@ -12,17 +12,26 @@ function remove_binaries() {
     if [ -z "$destination" ]; then
         echo "Dispatcher is not installed."
     else
-        rm "$destination" || { echo "Could not remove file $destination"; exit 1; }
+        read -p "Remove $destination? (y/n) " -n 1 -r
+        echo
+        if [[ $REPLY =~ ^[Yy]$ ]]; then
+            rm "$destination" || { echo "Could not remove file $destination"; exit 1; }
+        else
+            return 1
+        fi
     fi
 }
 
 function uninstall() {
-    remove_binaries
-    echo "Uninstallation completed. Please note config and model files are not removed."
+    if remove_binaries; then
+        echo "Uninstallation completed. Please note config and model files are not removed."
+    else
+        echo "User aborted uninstallation."
+    fi
 }
 
 function purge() {
-    remove_binaries
+    uninstall
     read -p "This will delete all profiles, models and data, continue y/n? " -n 1 -r
     echo
     if [[ $REPLY =~ ^[Yy]$ ]]; then
