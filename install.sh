@@ -1,0 +1,79 @@
+#!/bin/bash
+
+config_path="$HOME/.config/dispatcher";
+local_path="$HOME/.local";
+data_path="$local_path/share/dispatcher";
+model_path="$data_path/model";
+local_bin_path="$local_path/bin";
+
+
+function remove_binaries() {
+    destination=$(which dispatcher)
+    if [ -z "$destination" ]; then
+        echo "Dispatcher is not installed."
+    else
+        rm "$destination" || { echo "Could not remove file $destination"; exit 1; }
+    fi
+}
+
+function uninstall() {
+    remove_binaries
+    echo "Uninstallation completed. Please note config and model files are not removed."
+}
+
+function purge() {
+    remove_binaries
+    read -p "This will delete all profiles, models and data, continue y/n? " -n 1 -r
+    echo
+    if [[ $REPLY =~ ^[Yy]$ ]]; then
+        rm -rf "$config_path" || { echo "Could not remove config path"; exit 1; }
+        rm -rf "$data_path" || { echo "Could not remove data path"; exit 1; }
+        echo "Purge completed. All dispatcher files removed."
+    else
+        echo "Purge aborted."
+    fi
+}
+
+function installer() {
+    cargo build --release || { echo "Failed to build dispatcher."; exit 1; }
+
+    if [ ! -d "$config_path" ]; then
+        mkdir -p "$config_path" || { echo "Failed to create config path"; exit 1; };
+    else
+        echo "Config Path Exists."
+    fi
+
+    if [ ! -d "$data_path" ]; then
+        mkdir -p "$data_path" || { echo "Failed to create data path"; exit 1; };
+    else
+        echo "Data Path Exists."
+    fi
+
+    if [ ! -d "$model_path" ]; then
+        mkdir -p "$model_path" || { echo "Failed to create model path"; exit 1; };
+    else
+        echo "Model Path Exists."
+    fi
+
+    if [ -d "$local_bin_path" ]; then
+        cp "target/release/dispatcher" "$local_bin_path"
+        else
+            echo "There is no local bin path detected. Do you want to install the binary to /usr/local/bin ?"
+            read -p "y/n: " choice
+            if [ "$choice" == "y" ]; then
+                cp "target/release/dispatcher" "/usr/local/bin" || { echo "Could not install to /usr/local/bin, are you an admin?", exit 1; }
+            fi
+        fi
+
+    echo "Installation completed."
+    echo "You will need a Vosk model, please download it from https://alphacephei.com/vosk/models"
+    echo "Then place it in a subfolder of $model_path . I recomend using a small model."
+}
+
+if [ "$#" -ge 1 ]; then
+    if [ "$1" == "uninstall" ]; then uninstall;
+    elif [ "$1" == "purge" ]; then purge;
+    else echo "Unknown parameter \"$1\""; fi
+else
+    installer
+fi
