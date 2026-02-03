@@ -5,7 +5,7 @@ local_path="$HOME/.local";
 data_path="$local_path/share/dispatcher";
 model_path="$data_path/model";
 local_bin_path="$local_path/bin";
-
+profile_path="$config_path/profiles";
 
 function remove_binaries() {
     destination=$(which dispatcher)
@@ -52,6 +52,12 @@ function installer() {
         echo "Config Path Exists."
     fi
 
+    if [ ! -d "$profile_path" ]; then
+        mkdir -p "$profile_path" || { echo "Failed to create profile path"; exit 1; };
+    else
+        echo "Profile Path Exists."
+    fi
+
     if [ ! -d "$data_path" ]; then
         mkdir -p "$data_path" || { echo "Failed to create data path"; exit 1; };
     else
@@ -66,13 +72,13 @@ function installer() {
 
     if [ -d "$local_bin_path" ]; then
         cp "target/release/dispatcher" "$local_bin_path"
-        else
-            echo "There is no local bin path detected. Do you want to install the binary to /usr/local/bin ?"
-            read -p "y/n: " choice
-            if [ "$choice" == "y" ]; then
-                cp "target/release/dispatcher" "/usr/local/bin" || { echo "Could not install to /usr/local/bin, are you an admin?", exit 1; }
-            fi
+    else
+        echo "There is no local bin path detected. Do you want to install the binary to /usr/local/bin ?"
+        read -p "y/n: " choice
+        if [ "$choice" == "y" ]; then
+            cp "target/release/dispatcher" "/usr/local/bin" || { echo "Could not install to /usr/local/bin, are you an admin?", exit 1; }
         fi
+    fi
 
     echo "Installation completed."
     echo "You will need a Vosk model, please download it from https://alphacephei.com/vosk/models"
@@ -80,9 +86,9 @@ function installer() {
 }
 
 if [ "$#" -ge 1 ]; then
-    if [ "$1" == "uninstall" ]; then uninstall;
-    elif [ "$1" == "purge" ]; then purge;
-    else echo "Unknown parameter \"$1\""; fi
+if [ "$1" == "uninstall" ]; then uninstall;
+elif [ "$1" == "purge" ]; then purge;
+else echo "Unknown parameter \"$1\""; fi
 else
     installer
 fi
