@@ -1,4 +1,4 @@
-use dispatcher::ui::MainUIState;
+use dispatcher::ui::main_ui::MainUIState;
 use dispatcher::file_io;
 use dispatcher::action_profile::ActionProfile;
 use serde::{Serialize, Deserialize};
@@ -55,7 +55,6 @@ impl Config {
 
 /// Currently a testbed
 fn main()  -> iced::Result {
-    let config = Config::build().expect("Failed to build config");
-    println!("Config: {:?}", config);
+    let _config = Config::build().expect("Failed to build config");
     iced::run(MainUIState::update, MainUIState::view)
 }
