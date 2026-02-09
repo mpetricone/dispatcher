@@ -2,7 +2,7 @@ use crate::action_profile::ActionProfile;
 use crate::file_io;
 use crate::ui::modal_dialog::ModalDialog;
 use iced::Element;
-use iced::widget::{button, row, text, toggler};
+use iced::widget::{ row, combo_box, toggler};
 use serde::{Deserialize, Serialize};
 use std::fs::read_dir;
 use crate::file_io::from_file;
@@ -64,14 +64,15 @@ pub struct MainUIState {
     is_recording: bool,
     config: Option<Config>,
     modal_dialog: Option<ModalDialog<MainUIMessage>>,
-    profiles: Vec<ActionProfile>,
-    selected_profile_index: Option<usize>
+    //profiles: Vec<ActionProfile>,
+    selected_profile: Option<ActionProfile>,
+    combo_profiles: combo_box::State<ActionProfile>,
 }
 
-#[derive(Debug, Clone, Copy)]
+#[derive(Debug, Clone)]
 pub enum MainUIMessage {
     ToggleRecording(bool),
-    SelectProfile,
+    SelectProfile(ActionProfile),
     EditProfile,
     ModalAffirmative,
     ModalNegative,
@@ -88,14 +89,15 @@ impl MainUIState {
         );
         if let Ok(config) = Config::build() {
             let active_profile = file_io::from_file(&config.default_profile);
-            let working_state = MainUIState {
+            let mut working_state = MainUIState {
                 active_profile: active_profile.ok(),
                 is_recording: false,
                 config: Some(config),
                 modal_dialog: Some(modal_dialog),
-                profiles: Vec::new(),
-                selected_profile_index: None,
+                selected_profile: None,
+                combo_profiles: combo_box::State::new(vec![]),
             };
+            working_state.load_profiles();
             working_state
         } else {
             modal_dialog.show = true;
@@ -104,8 +106,8 @@ impl MainUIState {
                 is_recording: false,
                 config: None,
                 modal_dialog: Some(modal_dialog),
-                profiles: Vec::new(),
-                selected_profile_index: None,
+                selected_profile: None,
+                combo_profiles: combo_box::State::new(vec![]),
             }
         }
     }
@@ -115,14 +117,10 @@ impl MainUIState {
             if let Ok(prof_dir) = read_dir(&config.profile_path) {
                 for entry in prof_dir {
                     if let Ok(file) = entry {
-                        if let Ok(file_type) = file.file_type() {
-                            if file_type.is_file() {
-                                let filename = file.file_name().into_string().unwrap_or("".to_string());
-                                if filename.ends_with(".pro") {
-                                    if let Ok(profile) = from_file(&filename) {
-                                        self.profiles.push(profile);
-                                    }
-                                }
+                        let path = file.path();
+                        if path.is_file() && path.extension().unwrap_or_default() == "pro" {
+                            if let Ok(profile) = from_file(&path.to_string_lossy().into_owned()) {
+                                self.combo_profiles.push(profile);
                             }
                         }
                     }
@@ -132,14 +130,15 @@ impl MainUIState {
     }
 
     pub fn view(&self) -> Element<'_, MainUIMessage> {
-        let profile_name = match &self.active_profile {
-            Some(profile) => &profile.name,
-            None => "No profile loaded",
-        };
 
+        let profile_select = combo_box(
+            &self.combo_profiles,
+            "ActiveProfile:",
+            self.selected_profile.as_ref(),
+            MainUIMessage::SelectProfile,
+        );
         let window = row![
-            text(profile_name).width(600),
-            button("Select profile").on_press(MainUIMessage::SelectProfile),
+            profile_select,
             toggler(self.is_recording)
                 .on_toggle(MainUIMessage::ToggleRecording)
                 .label("Toggle Listening"),
@@ -165,8 +164,8 @@ impl MainUIState {
                     //TODO some type of popup
                 };
             }
-            MainUIMessage::SelectProfile => {
-                // Implement profile selection logic
+            MainUIMessage::SelectProfile(prof) => {
+                self.selected_profile = Some(prof);
             }
             MainUIMessage::EditProfile => {
                 // Implement profile editing logic
