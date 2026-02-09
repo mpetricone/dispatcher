@@ -13,6 +13,12 @@ pub struct ActionProfile {
     pub name: String,
 }
 
+impl std::fmt::Display for ActionProfile {
+    fn fmt(&self, f: &mut std::fmt::Formatter) -> std::fmt::Result {
+        f.write_str(&self.name)
+    }
+}
+
 impl ActionProfile {
     pub fn new(actions: Vec<ActionRecord>, name: &str) -> ActionProfile {
         ActionProfile {

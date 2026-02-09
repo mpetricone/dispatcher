@@ -4,6 +4,8 @@ use crate::ui::modal_dialog::ModalDialog;
 use iced::Element;
 use iced::widget::{button, row, text, toggler};
 use serde::{Deserialize, Serialize};
+use std::fs::read_dir;
+use crate::file_io::from_file;
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
 struct Config {
@@ -11,6 +13,7 @@ struct Config {
     model_path: String,
     default_profile: String,
     default_model: String,
+
 }
 
 impl Config {
@@ -61,6 +64,8 @@ pub struct MainUIState {
     is_recording: bool,
     config: Option<Config>,
     modal_dialog: Option<ModalDialog<MainUIMessage>>,
+    profiles: Vec<ActionProfile>,
+    selected_profile_index: Option<usize>
 }
 
 #[derive(Debug, Clone, Copy)]
@@ -83,12 +88,15 @@ impl MainUIState {
         );
         if let Ok(config) = Config::build() {
             let active_profile = file_io::from_file(&config.default_profile);
-            MainUIState {
+            let working_state = MainUIState {
                 active_profile: active_profile.ok(),
                 is_recording: false,
                 config: Some(config),
                 modal_dialog: Some(modal_dialog),
-            }
+                profiles: Vec::new(),
+                selected_profile_index: None,
+            };
+            working_state
         } else {
             modal_dialog.show = true;
             MainUIState {
@@ -96,6 +104,29 @@ impl MainUIState {
                 is_recording: false,
                 config: None,
                 modal_dialog: Some(modal_dialog),
+                profiles: Vec::new(),
+                selected_profile_index: None,
+            }
+        }
+    }
+
+    fn load_profiles(&mut self) {
+        if let Some(config) = &self.config {
+            if let Ok(prof_dir) = read_dir(&config.profile_path) {
+                for entry in prof_dir {
+                    if let Ok(file) = entry {
+                        if let Ok(file_type) = file.file_type() {
+                            if file_type.is_file() {
+                                let filename = file.file_name().into_string().unwrap_or("".to_string());
+                                if filename.ends_with(".pro") {
+                                    if let Ok(profile) = from_file(&filename) {
+                                        self.profiles.push(profile);
+                                    }
+                                }
+                            }
+                        }
+                    }
+                }
             }
         }
     }
