@@ -30,6 +30,12 @@ impl<T: std::clone::Clone> ModalDialog<T> {
         self.show = show;
     }
 
+    pub fn show_message(&mut self, title: &str, message: &str) {
+        self.title = title.to_string();
+        self.message = message.to_string();
+        self.show(true);
+    }
+
     pub fn apply<'a>(&'a self, core: Element<'a, T>) -> Element<'a, T> {
         let dialog = Container::new(center(column![
             row![text(&self.title)],

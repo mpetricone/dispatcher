@@ -1,40 +1,42 @@
+/// * Main UI and application configuration.
 use crate::action_profile::ActionProfile;
 use crate::file_io;
+use crate::file_io::from_file;
 use crate::ui::modal_dialog::ModalDialog;
 use iced::Element;
-use iced::widget::{ row, combo_box, toggler};
+use iced::widget::combo_box::State;
+use iced::widget::{combo_box, row, toggler};
 use serde::{Deserialize, Serialize};
 use std::fs::read_dir;
-use crate::file_io::from_file;
 
+/// Application configuration.
 #[derive(Debug, Clone, Serialize, Deserialize)]
 struct Config {
     profile_path: String,
     model_path: String,
     default_profile: String,
+    default_profile_name: String,
     default_model: String,
-
 }
 
 impl Config {
+    /// Creates a configuration by loading files from the configuration directory.
+    /// We use crate [dirs] to determine standard directories.
     fn build() -> Result<Config, Box<dyn std::error::Error>> {
         let mut config_path = dirs::config_dir().ok_or("Cannot find a general config directory")?;
         config_path.push("dispatcher");
         if !config_path.exists() {
-            eprintln!("Missing config directory. Did you run the install script?");
             return Err("Missing config directory".into());
         }
         let mut profile_path = config_path.clone();
         profile_path.push("profiles");
         if !profile_path.exists() {
-            eprintln!("Missing profile directory");
             return Err("Missing profile directory".into());
         }
         let mut model_path = dirs::data_local_dir().ok_or("Cannot find a local data directory")?;
         model_path.push("dispatcher");
         model_path.push("model");
         if !model_path.exists() {
-            eprintln!("Missing model directory");
             return Err("Missing model directory".into());
         }
         let mut config_file = config_path.clone();
@@ -45,11 +47,12 @@ impl Config {
             let empty_profile = ActionProfile::new(vec![], "default");
             let mut default_profile = profile_path.clone();
             default_profile.push("default.pro");
-            file_io::to_file(&default_profile.to_string_lossy(), false, empty_profile)?;
+            file_io::to_file(&default_profile.to_string_lossy(), false, &empty_profile)?;
             let conf = Config {
                 profile_path: profile_path.to_string_lossy().to_string(),
                 model_path: model_path.to_string_lossy().to_string(),
                 default_profile: default_profile.to_string_lossy().to_string(),
+                default_profile_name: empty_profile.name.clone(),
                 default_model: model_path.to_string_lossy().to_string(),
             };
             file_io::to_file(&config_file.to_string_lossy(), false, &conf)?;
@@ -112,25 +115,31 @@ impl MainUIState {
         }
     }
 
+    /// Load profiles from the configuration directory.
+    /// Also sets default profile
     fn load_profiles(&mut self) {
         if let Some(config) = &self.config {
+            let mut loaded_profiles: Vec<ActionProfile> = vec![];
             if let Ok(prof_dir) = read_dir(&config.profile_path) {
-                for entry in prof_dir {
-                    if let Ok(file) = entry {
-                        let path = file.path();
-                        if path.is_file() && path.extension().unwrap_or_default() == "pro" {
-                            if let Ok(profile) = from_file(&path.to_string_lossy().into_owned()) {
-                                self.combo_profiles.push(profile);
-                            }
-                        }
+                for file in prof_dir.flatten() {
+                    let path = file.path();
+                    if path.is_file()
+                        && path.extension().unwrap_or_default() == "pro"
+                        && let Ok(profile) = from_file(&path.to_string_lossy())
+                    {
+                        loaded_profiles.push(profile);
                     }
                 }
             }
+            let selection = &loaded_profiles
+                .iter()
+                .find(|p| p.name == config.default_profile_name);
+            self.active_profile = selection.cloned();
+            self.combo_profiles = State::with_selection(loaded_profiles.clone(), *selection);
         }
     }
 
     pub fn view(&self) -> Element<'_, MainUIMessage> {
-
         let profile_select = combo_box(
             &self.combo_profiles,
             "ActiveProfile:",
@@ -158,14 +167,21 @@ impl MainUIState {
                     self.is_recording = !self.is_recording;
                 } else {
                     if let Some(diag) = &mut self.modal_dialog {
-                        diag.show(true);
+                        diag.show_message(
+                            "No Profile Selected",
+                            "Please select a profile before starting recording.",
+                        );
                     }
                     self.is_recording = false;
                     //TODO some type of popup
                 };
             }
             MainUIMessage::SelectProfile(prof) => {
-                self.selected_profile = Some(prof);
+                if !self.is_recording {
+                    self.selected_profile = Some(prof);
+                } else if let Some(diag) = &mut self.modal_dialog {
+                    diag.show_message("Please", "Stop listening before changing profiles.");
+                }
             }
             MainUIMessage::EditProfile => {
                 // Implement profile editing logic
