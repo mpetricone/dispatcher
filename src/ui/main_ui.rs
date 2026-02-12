@@ -5,7 +5,7 @@ use crate::file_io::from_file;
 use crate::ui::modal_dialog::ModalDialog;
 use iced::Element;
 use iced::widget::combo_box::State;
-use iced::widget::{combo_box, row, toggler};
+use iced::widget::{button, column, combo_box, container, row, toggler};
 use serde::{Deserialize, Serialize};
 use std::fs::read_dir;
 
@@ -76,6 +76,7 @@ pub struct MainUIState {
 pub enum MainUIMessage {
     ToggleRecording(bool),
     SelectProfile(ActionProfile),
+    NewProfile,
     EditProfile,
     ModalAffirmative,
     ModalNegative,
@@ -146,13 +147,20 @@ impl MainUIState {
             self.selected_profile.as_ref(),
             MainUIMessage::SelectProfile,
         );
-        let window = row![
+        let content = row![
             profile_select,
             toggler(self.is_recording)
                 .on_toggle(MainUIMessage::ToggleRecording)
                 .label("Toggle Listening"),
+            column![
+                button("New Profile").on_press(MainUIMessage::NewProfile),
+                button("Edit Profile").on_press(MainUIMessage::EditProfile),
+            ]
+            .spacing(5)
         ]
-        .spacing(20);
+        .spacing(20)
+        .padding(10);
+        let window = container(content);
         if let Some(dialog) = &self.modal_dialog {
             dialog.apply(window.into())
         } else {
@@ -182,6 +190,9 @@ impl MainUIState {
                 } else if let Some(diag) = &mut self.modal_dialog {
                     diag.show_message("Please", "Stop listening before changing profiles.");
                 }
+            }
+            MainUIMessage::NewProfile => {
+                // Implement new profile creation logic
             }
             MainUIMessage::EditProfile => {
                 // Implement profile editing logic

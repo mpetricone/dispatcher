@@ -15,7 +15,7 @@
 //! 1. GUI - [iced]
 //! 2. Input recording via GUI
 //! 3. Working voice detection command dispatching.
-//! ----- Usable at This point -----
+//!    ----- Usable at This point -----
 //! 4. Voice playback on events - might swap with with 4.
 //!
 //! ## Current Design Limitations
