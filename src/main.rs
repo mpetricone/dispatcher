@@ -1,6 +1,6 @@
-use dispatcher::ui::main_ui::MainUIState;
+use dispatcher::ui::window_manager::window_manager;
 
 /// Currently a testbed
 fn main() -> iced::Result {
-    iced::application(MainUIState::new, MainUIState::update, MainUIState::view).run()
+    iced::application(WindowManager::new, WindowManager::update, WindowManager::view).run()
 }

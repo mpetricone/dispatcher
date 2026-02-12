@@ -3,7 +3,9 @@ use crate::action_profile::ActionProfile;
 use crate::file_io;
 use crate::file_io::from_file;
 use crate::ui::modal_dialog::ModalDialog;
-use iced::Element;
+use crate::ui::profile;
+
+use iced::{Element, Task};
 use iced::widget::combo_box::State;
 use iced::widget::{button, column, combo_box, container, row, toggler};
 use serde::{Deserialize, Serialize};
@@ -80,6 +82,12 @@ pub enum MainUIMessage {
     EditProfile,
     ModalAffirmative,
     ModalNegative,
+}
+
+pub enum MainUIAction {
+    EditProfile(ActionProfile),
+    NewProfile(ActionProfile),
+    None,
 }
 
 impl MainUIState {
@@ -168,7 +176,8 @@ impl MainUIState {
         }
     }
 
-    pub fn update(&mut self, message: MainUIMessage) {
+    pub fn update(&mut self, message: MainUIMessage) -> Task<MainUIAction>{
+        let mut action = MainUIAction::None;
         match message {
             MainUIMessage::ToggleRecording(_) => {
                 if self.active_profile.is_some() {
@@ -192,10 +201,16 @@ impl MainUIState {
                 }
             }
             MainUIMessage::NewProfile => {
-                // Implement new profile creation logic
+                action = MainUIAction::NewProfile(ActionProfile::new(vec![], ""));
             }
             MainUIMessage::EditProfile => {
-                // Implement profile editing logic
+                if let Some(profile) = &self.selected_profile {
+                    action = MainUIAction::EditProfile(profile.clone());
+                } else {
+                    if let Some(diag) = &mut self.modal_dialog {
+                        diag.show_message("No Profile Selected", "Please select a profile before editing, or create a new one.");
+                    }
+                }
             }
             MainUIMessage::ModalAffirmative | MainUIMessage::ModalNegative => {
                 if let Some(dialog) = &mut self.modal_dialog {
@@ -203,5 +218,6 @@ impl MainUIState {
                 }
             }
         }
+        Task::done(action)
     }
 }
