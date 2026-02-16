@@ -1,29 +1,35 @@
-use crate::ui::main_ui::MainUIMessage;
-use crate::ui::profile::{ProfileAction, ProfileMessage};
-use crate::ui::profile;
 use crate::ui::main_ui;
-use iced::{ Element, Task };
+use crate::ui::profile;
+use iced::{Element, Task};
 
 enum Window {
     MainUI(main_ui::MainUIState),
     Profile(profile::Profile),
 }
 
-enum Message {
+pub enum Message {
     MainUI(main_ui::MainUIMessage),
     Profile(profile::ProfileMessage),
 }
 
-struct WindowManager{
+pub struct WindowManager {
     window: Window,
+}
+
+impl Default for WindowManager {
+    fn default() -> Self {
+        WindowManager::new()
+    }
 }
 
 impl WindowManager {
     pub fn new() -> Self {
-        WindowManager { window: Window::MainUI(main_ui::MainUIState::new()) }
+        WindowManager {
+            window: Window::MainUI(main_ui::MainUIState::new()),
+        }
     }
 
-    fn update(&mut self, message: Message) -> Task<Message>  {
+    pub fn update(&mut self, message: Message) -> Task<Message> {
         match message {
             Message::MainUI(message) => {
                 if let Window::MainUI(main) = &mut self.window {
@@ -31,6 +37,11 @@ impl WindowManager {
                     match action {
                         main_ui::MainUIAction::None => Task::none(),
                         main_ui::MainUIAction::NewProfile(data) => {
+                            let profile = profile::Profile::new(data);
+                            self.window = Window::Profile(profile);
+                            Task::none()
+                        }
+                        main_ui::MainUIAction::EditProfile(data) => {
                             let profile = profile::Profile::new(data);
                             self.window = Window::Profile(profile);
                             Task::none()
@@ -46,7 +57,7 @@ impl WindowManager {
                     match action {
                         profile::ProfileAction::None => Task::none(),
                         profile::ProfileAction::Close => {
-                            let main  = main_ui::MainUIState::new();
+                            let main = main_ui::MainUIState::new();
                             self.window = Window::MainUI(main);
                             Task::none()
                         }
@@ -58,7 +69,7 @@ impl WindowManager {
         }
     }
 
-    fn view(&self) -> Element<Message> {
+    pub fn view(&self) -> Element<'_, Message> {
         match &self.window {
             Window::MainUI(main) => main.view().map(Message::MainUI),
             Window::Profile(profile) => profile.view().map(Message::Profile),

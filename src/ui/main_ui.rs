@@ -3,9 +3,7 @@ use crate::action_profile::ActionProfile;
 use crate::file_io;
 use crate::file_io::from_file;
 use crate::ui::modal_dialog::ModalDialog;
-use crate::ui::profile;
-
-use iced::{Element, Task};
+use iced::Element;
 use iced::widget::combo_box::State;
 use iced::widget::{button, column, combo_box, container, row, toggler};
 use serde::{Deserialize, Serialize};
@@ -176,7 +174,7 @@ impl MainUIState {
         }
     }
 
-    pub fn update(&mut self, message: MainUIMessage) -> Task<MainUIAction>{
+    pub fn update(&mut self, message: MainUIMessage) -> MainUIAction {
         let mut action = MainUIAction::None;
         match message {
             MainUIMessage::ToggleRecording(_) => {
@@ -206,10 +204,11 @@ impl MainUIState {
             MainUIMessage::EditProfile => {
                 if let Some(profile) = &self.selected_profile {
                     action = MainUIAction::EditProfile(profile.clone());
-                } else {
-                    if let Some(diag) = &mut self.modal_dialog {
-                        diag.show_message("No Profile Selected", "Please select a profile before editing, or create a new one.");
-                    }
+                } else if let Some(diag) = &mut self.modal_dialog {
+                    diag.show_message(
+                        "No Profile Selected",
+                        "Please select a profile before editing, or create a new one.",
+                    );
                 }
             }
             MainUIMessage::ModalAffirmative | MainUIMessage::ModalNegative => {
@@ -218,6 +217,6 @@ impl MainUIState {
                 }
             }
         }
-        Task::done(action)
+        action
     }
 }
