@@ -1,5 +1,5 @@
 use crate::action_profile::ActionProfile;
-use iced::widget::{Text, column};
+use iced::widget::{ column, Text};
 
 pub enum ProfileMessage {
     Record(bool),
@@ -12,6 +12,7 @@ pub enum ProfileAction {
     Close,
 }
 
+
 pub struct Profile {
     profile: ActionProfile,
 }
@@ -19,17 +20,25 @@ pub struct Profile {
 impl Profile {
     /// Placeholder for creating a new profile
     pub fn new(profile: ActionProfile) -> Self {
-        Profile { profile }
+            Profile { profile }
     }
 
     pub fn update(&mut self, message: ProfileMessage) -> ProfileAction {
         match message {
-            ProfileMessage::Record(value) => ProfileAction::None,
-            ProfileMessage::Save => ProfileAction::Close,
-            ProfileMessage::Cancel => ProfileAction::Close,
+            ProfileMessage::Record(value) => {
+                ProfileAction::None
+            }
+            ProfileMessage::Save => {
+                ProfileAction::Close
+            }
+            ProfileMessage::Cancel => {
+                ProfileAction::Close
+            }
         }
     }
     pub fn view(&self) -> iced::Element<'_, ProfileMessage> {
-        column![Text::new("Placeholder")].into()
+        column![
+            Text::new("Placeholder")
+        ].into()
     }
 }
