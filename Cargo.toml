@@ -13,3 +13,4 @@ serde_json = "1.0.149"
 tokio = { version = "1.49", features = ["rt"]}
 voice-stream = "0.4.0"
 vosk = "0.3.1"
+iced_aw = { version = "0.13.0", features=["selection_list"]}

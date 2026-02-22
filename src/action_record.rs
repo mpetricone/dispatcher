@@ -5,14 +5,21 @@ use serde::{Deserialize, Serialize};
 use std::error::Error;
 use std::thread;
 use std::time::Duration;
+use std::fmt::Display;
 
 /// # Everything needed to hold an action
-#[derive(Serialize, Deserialize, Clone, PartialEq, Debug)]
+#[derive(Serialize, Deserialize, Clone, PartialEq, Debug, Default)]
 pub struct ActionRecord {
     pub name: String,
     pub activator_text: String,
     pub action_stream: Vec<InputEvent>,
     // Placeholder Audio output
+}
+
+impl Display for ActionRecord {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        write!(f,"{}", self.name)
+    }
 }
 
 impl ActionRecord {

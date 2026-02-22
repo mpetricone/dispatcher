@@ -76,7 +76,6 @@ pub struct MainUIState {
 pub enum MainUIMessage {
     ToggleRecording(bool),
     SelectProfile(ActionProfile),
-    NewProfile,
     EditProfile,
     ModalAffirmative,
     ModalNegative,
@@ -159,8 +158,7 @@ impl MainUIState {
                 .on_toggle(MainUIMessage::ToggleRecording)
                 .label("Toggle Listening"),
             column![
-                button("New Profile").on_press(MainUIMessage::NewProfile),
-                button("Edit Profile").on_press(MainUIMessage::EditProfile),
+                button("Profile Details").on_press(MainUIMessage::EditProfile),
             ]
             .spacing(5)
         ]
@@ -197,9 +195,6 @@ impl MainUIState {
                 } else if let Some(diag) = &mut self.modal_dialog {
                     diag.show_message("Please", "Stop listening before changing profiles.");
                 }
-            }
-            MainUIMessage::NewProfile => {
-                action = MainUIAction::NewProfile(ActionProfile::new(vec![], ""));
             }
             MainUIMessage::EditProfile => {
                 if let Some(profile) = &self.selected_profile {

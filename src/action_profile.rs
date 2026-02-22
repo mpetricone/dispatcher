@@ -7,7 +7,7 @@ use std::time::Duration;
 /// events dispatcher listens for, and the actions
 /// associated with that event. It will also store some profile
 /// settings.
-#[derive(Serialize, Deserialize, Clone, PartialEq, Debug)]
+#[derive(Serialize, Deserialize, Clone, PartialEq, Debug, Default)]
 pub struct ActionProfile {
     pub actions: Vec<ActionRecord>,
     pub name: String,
