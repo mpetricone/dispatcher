@@ -14,12 +14,14 @@ pub enum ProfileMessage {
     Close,
 }
 
+/// Used for signalling moving a selected profile action up or down the vec
 #[derive(Clone, Debug)]
 pub enum ProfileMoveDirection {
     Up,
     Down,
 }
 
+/// TODO: Do we need this?
 pub enum ProfileAction {
     None,
     Close,
@@ -29,6 +31,7 @@ pub struct Profile {
     profile: ActionProfile,
     selected: Option<usize>,
     selected_name: String,
+    /// iced_aw wont work without Eq, and we've got floats
     slv: Vec<ProfileListEntry>,
 }
 
@@ -47,15 +50,8 @@ impl Display for ProfileListEntry {
 impl Profile {
     /// Placeholder for creating a new profile
     pub fn new(profile: ActionProfile) -> Self {
-        let slv = profile
-            .actions
-            .iter()
-            .enumerate()
-            .map(|(idx, action)| ProfileListEntry {
-                name: action.name.clone(),
-                idx,
-            })
-            .collect();
+        let slv = Self::create_list_view(&profile);
+
         Profile {
             profile,
             selected: None,
@@ -64,6 +60,19 @@ impl Profile {
         }
     }
 
+    fn create_list_view(profile: &ActionProfile) -> Vec<ProfileListEntry> {
+        profile
+            .actions
+            .iter()
+            .enumerate()
+            .map(|(idx, action)| ProfileListEntry {
+                name: action.name.clone(),
+                idx,
+            })
+            .collect()
+    }
+
+    /// Called by update to move a profile action up or down the vec
     fn move_selected_action(&mut self, direction: ProfileMoveDirection) {
         if let Some(selected) = self.selected {
             match direction {
@@ -72,13 +81,16 @@ impl Profile {
                         self.profile.actions.swap(selected, selected - 1);
                         self.selected = Some(selected - 1);
                         self.selected_name = self.profile.actions[selected - 1].name.clone();
+
+                        self.slv = Self::create_list_view(&self.profile);
                     }
                 }
                 ProfileMoveDirection::Down => {
-                    if self.selected < Some(self.profile.actions.len() - 2) {
+                    if self.selected < Some(self.profile.actions.len() - 1) {
                         self.profile.actions.swap(selected, selected + 1);
                         self.selected = Some(selected + 1);
                         self.selected_name = self.profile.actions[selected + 1].name.clone();
+                        self.slv = Self::create_list_view(&self.profile);
                     }
                 }
             }
