@@ -3,9 +3,9 @@ use crate::input_recorder::InputEvent;
 use rdev;
 use serde::{Deserialize, Serialize};
 use std::error::Error;
+use std::fmt::Display;
 use std::thread;
 use std::time::Duration;
-use std::fmt::Display;
 
 /// # Everything needed to hold an action
 #[derive(Serialize, Deserialize, Clone, PartialEq, Debug, Default)]
@@ -18,7 +18,7 @@ pub struct ActionRecord {
 
 impl Display for ActionRecord {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-        write!(f,"{}", self.name)
+        write!(f, "{}", self.name)
     }
 }
 

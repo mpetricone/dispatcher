@@ -157,10 +157,7 @@ impl MainUIState {
             toggler(self.is_recording)
                 .on_toggle(MainUIMessage::ToggleRecording)
                 .label("Toggle Listening"),
-            column![
-                button("Profile Details").on_press(MainUIMessage::EditProfile),
-            ]
-            .spacing(5)
+            column![button("Profile Details").on_press(MainUIMessage::EditProfile),].spacing(5)
         ]
         .spacing(20)
         .padding(10);
