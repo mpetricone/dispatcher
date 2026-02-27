@@ -81,7 +81,6 @@ impl Profile {
                         self.profile.actions.swap(selected, selected - 1);
                         self.selected = Some(selected - 1);
                         self.selected_name = self.profile.actions[selected - 1].name.clone();
-
                         self.slv = Self::create_list_view(&self.profile);
                     }
                 }
