@@ -61,7 +61,7 @@ impl WindowManager {
                             self.window = Window::MainUI(main);
                             Task::none()
                         }
-                        _ => Task::none()
+                        _ => Task::none(),
                     }
                 } else {
                     Task::none()

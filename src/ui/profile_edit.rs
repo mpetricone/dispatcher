@@ -1,6 +1,6 @@
 use crate::action_record::ActionRecord;
-use iced::widget::{button, column, row, text};
 use iced::Element;
+use iced::widget::{button, column, row, text};
 use std::time::Duration;
 
 pub struct ProfileEdit {
@@ -41,14 +41,14 @@ impl ProfileEdit {
     }
 
     pub fn update(&mut self, message: ProfileEditMessage) -> ProfileEditAction {
-       match message {
-           ProfileEditMessage::Save => ProfileEditAction::Save(self.idx, self.action.clone()),
-           ProfileEditMessage::Cancel => ProfileEditAction::Close,
-           ProfileEditMessage::ToggleRecord => {
-               self.toggle_record();
-               ProfileEditAction::None
-           },
-       }
+        match message {
+            ProfileEditMessage::Save => ProfileEditAction::Save(self.idx, self.action.clone()),
+            ProfileEditMessage::Cancel => ProfileEditAction::Close,
+            ProfileEditMessage::ToggleRecord => {
+                self.toggle_record();
+                ProfileEditAction::None
+            }
+        }
     }
 
     pub fn view(&self) -> Element<'_, ProfileEditMessage> {
@@ -62,6 +62,7 @@ impl ProfileEdit {
                 button(text("Cancel")).on_press(ProfileEditMessage::Cancel),
                 button(text("Save")).on_press(ProfileEditMessage::Save),
             ],
-        ].into()
+        ]
+        .into()
     }
 }

@@ -13,7 +13,7 @@ pub enum ProfileMessage {
     Close,
     Delete,
     Move(ProfileMoveDirection),
-    ProfileSelected(usize, ProfileListEntry)
+    ProfileSelected(usize, ProfileListEntry),
 }
 
 /// Used for signalling moving a selected profile action up or down the vec
@@ -104,14 +104,18 @@ impl Profile {
                 self.selected = Some(index);
                 self.selected_name = name.name.clone();
             }
-            ProfileMessage::Add => return ProfileAction::Edit(Some(0), vec![ActionRecord::new("", "", vec!())]),
-            ProfileMessage::Edit => return ProfileAction::Edit(self.selected, self.profile.actions.clone()),
+            ProfileMessage::Add => {
+                return ProfileAction::Edit(Some(0), vec![ActionRecord::new("", "", vec![])]);
+            }
+            ProfileMessage::Edit => {
+                return ProfileAction::Edit(self.selected, self.profile.actions.clone());
+            }
             ProfileMessage::Delete => todo!("delete a profile action"),
             ProfileMessage::Close => return ProfileAction::Close(self.profile.clone()),
             ProfileMessage::Move(direction) => {
                 self.move_selected_action(direction);
             }
-            ProfileMessage::None =>(),
+            ProfileMessage::None => (),
         }
         ProfileAction::None
     }
