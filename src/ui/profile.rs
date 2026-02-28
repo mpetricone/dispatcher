@@ -1,17 +1,19 @@
 use crate::action_profile::ActionProfile;
+use crate::action_record::ActionRecord;
 use iced::widget::{button, column, row, text};
 use iced::{Font, Renderer, Theme};
 use iced_aw::{selection_list::SelectionList, style::selection_list::primary};
 use std::fmt::Display;
 
-#[derive(Debug, Clone)]
+#[derive(Clone, Debug)]
 pub enum ProfileMessage {
-    ProfileSelected(usize, ProfileListEntry),
     Add,
+    None,
     Edit,
-    Move(ProfileMoveDirection),
-    Delete,
     Close,
+    Delete,
+    Move(ProfileMoveDirection),
+    ProfileSelected(usize, ProfileListEntry)
 }
 
 /// Used for signalling moving a selected profile action up or down the vec
@@ -21,18 +23,18 @@ pub enum ProfileMoveDirection {
     Down,
 }
 
-/// TODO: Do we need this?
-pub enum ProfileAction {
-    None,
-    Close,
-}
-
 pub struct Profile {
     profile: ActionProfile,
     selected: Option<usize>,
     selected_name: String,
     /// iced_aw wont work without Eq, and we've got floats
     slv: Vec<ProfileListEntry>,
+}
+
+pub enum ProfileAction {
+    Edit(Option<usize>, Vec<ActionRecord>),
+    Close(ActionProfile),
+    None,
 }
 
 #[derive(Debug, PartialEq, Eq, Hash, Clone)]
@@ -101,17 +103,17 @@ impl Profile {
             ProfileMessage::ProfileSelected(index, name) => {
                 self.selected = Some(index);
                 self.selected_name = name.name.clone();
-                ProfileAction::None
             }
-            ProfileMessage::Add => todo!("add a new profile action"),
-            ProfileMessage::Edit => todo!("edit a profile action"),
+            ProfileMessage::Add => return ProfileAction::Edit(Some(0), vec![ActionRecord::new("", "", vec!())]),
+            ProfileMessage::Edit => return ProfileAction::Edit(self.selected, self.profile.actions.clone()),
             ProfileMessage::Delete => todo!("delete a profile action"),
+            ProfileMessage::Close => return ProfileAction::Close(self.profile.clone()),
             ProfileMessage::Move(direction) => {
                 self.move_selected_action(direction);
-                ProfileAction::None
             }
-            ProfileMessage::Close => ProfileAction::Close,
+            ProfileMessage::None =>(),
         }
+        ProfileAction::None
     }
 
     pub fn view(&self) -> iced::Element<'_, ProfileMessage> {
@@ -132,11 +134,12 @@ impl Profile {
                 column![
                     button(text("Add Action")).on_press(ProfileMessage::Add),
                     button(text("Edit Action")).on_press(ProfileMessage::Edit),
-                    button(text("Delete Delete Action")).on_press(ProfileMessage::Delete),
+                    //button(text("Delete Delete Action")).on_press(ProfileMessage::Delete),
                     button(text("Move Action Up"))
                         .on_press(ProfileMessage::Move(ProfileMoveDirection::Up)),
                     button(text("Move Action Down"))
                         .on_press(ProfileMessage::Move(ProfileMoveDirection::Down)),
+                    button(text("Close")).on_press(ProfileMessage::Close),
                 ]
             ]
         ]

@@ -24,13 +24,13 @@ impl Display for ActionRecord {
 
 impl ActionRecord {
     pub fn new(
-        name: String,
-        activator_text: String,
+        name: &str,
+        activator_text: &str,
         action_stream: Vec<InputEvent>,
     ) -> ActionRecord {
         ActionRecord {
-            name,
-            activator_text,
+            name: name.to_string(),
+            activator_text: activator_text.to_string(),
             action_stream,
         }
     }

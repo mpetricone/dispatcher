@@ -5,6 +5,7 @@ use std::time::Duration;
 
 pub struct ProfileEdit {
     pub action: ActionRecord,
+    pub idx: Option<usize>,
     pub record_string: String,
 }
 
@@ -16,16 +17,17 @@ pub enum ProfileEditMessage {
 }
 
 pub enum ProfileEditAction {
-    Save(ActionRecord),
+    Save(Option<usize>, ActionRecord),
     Close,
     None,
 }
 
 impl ProfileEdit {
-    pub fn new(action: ActionRecord) -> Self {
-        Self {
+    pub fn new(idx: Option<usize>, action: ActionRecord) -> Self {
+        ProfileEdit {
             action,
             record_string: "".to_string(),
+            idx,
         }
     }
 
@@ -38,9 +40,9 @@ impl ProfileEdit {
         }
     }
 
-    pub fn update(&mut self, message: ProfileEditMessage) -> ProfileEditAction{
+    pub fn update(&mut self, message: ProfileEditMessage) -> ProfileEditAction {
        match message {
-           ProfileEditMessage::Save => ProfileEditAction::Save(self.action.clone()),
+           ProfileEditMessage::Save => ProfileEditAction::Save(self.idx, self.action.clone()),
            ProfileEditMessage::Cancel => ProfileEditAction::Close,
            ProfileEditMessage::ToggleRecord => {
                self.toggle_record();
