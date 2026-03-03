@@ -6,6 +6,7 @@ use serde::{Deserialize, Serialize};
 use std::sync::{Arc, Mutex};
 use std::thread;
 use std::time::{Duration, SystemTime};
+use std::fmt::Display;
 
 /// Records keyboard input
 ///
@@ -42,6 +43,12 @@ pub struct InputEvent {
     pub event_type: rdev::EventType,
     pub duration: Option<Duration>,
     time: SystemTime,
+}
+
+impl Display for InputEvent {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        write!(f, "{:?}", self.event_type)
+    }
 }
 
 impl InputEvent {
