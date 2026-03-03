@@ -12,6 +12,7 @@ pub enum ProfileMessage {
     Edit,
     Close,
     Delete,
+    Save,
     Move(ProfileMoveDirection),
     ProfileSelected(usize, ProfileListEntry),
 }
@@ -33,7 +34,8 @@ pub struct Profile {
 
 pub enum ProfileAction {
     Edit(Option<usize>, Vec<ActionRecord>),
-    Close(ActionProfile),
+    Close,
+    Save(ActionProfile),
     None,
 }
 
@@ -111,7 +113,8 @@ impl Profile {
                 return ProfileAction::Edit(self.selected, self.profile.actions.clone());
             }
             ProfileMessage::Delete => todo!("delete a profile action"),
-            ProfileMessage::Close => return ProfileAction::Close(self.profile.clone()),
+            ProfileMessage::Close => return ProfileAction::Close,
+            ProfileMessage::Save => return ProfileAction::Save(self.profile.clone()),
             ProfileMessage::Move(direction) => {
                 self.move_selected_action(direction);
             }
@@ -144,6 +147,7 @@ impl Profile {
                     button(text("Move Action Down"))
                         .on_press(ProfileMessage::Move(ProfileMoveDirection::Down)),
                     button(text("Close")).on_press(ProfileMessage::Close),
+                    button(text("Save")).on_press(ProfileMessage::Save),
                 ]
             ]
         ]

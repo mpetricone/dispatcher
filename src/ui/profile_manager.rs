@@ -15,7 +15,8 @@ pub enum Message {
 }
 
 pub enum ProfileWindowAction {
-    Close(ActionProfile),
+    Close,
+    Save(ActionProfile),
     None,
 }
 
@@ -51,8 +52,12 @@ impl ProfileManager {
                             }
                         }
                         profile::ProfileAction::None => (),
-                        profile::ProfileAction::Close(data) => {
-                            return ProfileWindowAction::Close(data);
+                        profile::ProfileAction::Save(data) => {
+                            //TODO Save
+                            return ProfileWindowAction::None;
+                        }
+                        profile::ProfileAction::Close => {
+                            return ProfileWindowAction::Close;
                         }
                     }
                 }

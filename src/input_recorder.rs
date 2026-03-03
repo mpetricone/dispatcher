@@ -3,10 +3,10 @@ use rdev::{
     Key, ListenError, listen,
 };
 use serde::{Deserialize, Serialize};
+use std::fmt::Display;
 use std::sync::{Arc, Mutex};
 use std::thread;
 use std::time::{Duration, SystemTime};
-use std::fmt::Display;
 
 /// Records keyboard input
 ///

@@ -20,7 +20,14 @@ pub struct ActionRecordStreamFormatted<'a>(pub &'a ActionRecord);
 
 impl<'a> Display for ActionRecordStreamFormatted<'a> {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-        write!(f, "{}", self.0.action_stream.iter().fold(String::new(), |acc, x| acc + &x.to_string() + " "))
+        write!(
+            f,
+            "{}",
+            self.0
+                .action_stream
+                .iter()
+                .fold(String::new(), |acc, x| acc + &x.to_string() + " ")
+        )
     }
 }
 

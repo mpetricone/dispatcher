@@ -55,8 +55,7 @@ impl WindowManager {
                 if let Window::Profile(profile) = &mut self.window {
                     let action = profile.update(message);
                     match action {
-                        profile_manager::ProfileWindowAction::Close(profile) => {
-                            //TODO save profile
+                        profile_manager::ProfileWindowAction::Close => {
                             let main = main_ui::MainUIState::new();
                             self.window = Window::MainUI(main);
                             Task::none()
