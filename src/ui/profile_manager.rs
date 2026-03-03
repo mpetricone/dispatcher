@@ -62,7 +62,11 @@ impl ProfileManager {
                     match edit.update(message) {
                         profile_edit::ProfileEditAction::Save(idx, data) => {
                             if let Some(index) = idx {
-                                self.stable_profile.actions[index] = data;
+                                if index < self.stable_profile.actions.len() {
+                                    self.stable_profile.actions[index] = data;
+                                } else {
+                                    self.stable_profile.actions.push(data);
+                                }
                             } else {
                                 self.stable_profile.actions.push(data);
                             }
