@@ -1,6 +1,9 @@
 use crate::action_record::ActionRecord;
+use crate::config::{Config, FilesFromConfig};
+use crate::file_io;
 use serde::{Deserialize, Serialize};
 use std::error::Error;
+use std::path::PathBuf;
 use std::time::Duration;
 
 /// ActionProfile is essentially a list of any
@@ -16,6 +19,32 @@ pub struct ActionProfile {
 impl std::fmt::Display for ActionProfile {
     fn fmt(&self, f: &mut std::fmt::Formatter) -> std::fmt::Result {
         f.write_str(&self.name)
+    }
+}
+
+impl FilesFromConfig<ActionProfile> for ActionProfile {
+    fn to_file(&self, config: &Config) -> Result<(), Box<dyn std::error::Error>> {
+        let path: PathBuf = [
+            &config.profile_path,
+            &format!("{}{}", self.name, ActionProfile::file_extension()),
+        ]
+        .iter()
+        .collect();
+        file_io::to_file(&path.to_string_lossy(), true, self)
+    }
+
+    fn from_file(name: &str, config: &Config) -> Result<ActionProfile, Box<dyn std::error::Error>> {
+        let path: PathBuf = [
+            &config.profile_path,
+            &format!("{}{}", name, ActionProfile::file_extension()),
+        ]
+        .iter()
+        .collect();
+        file_io::from_file(&path.to_string_lossy())
+    }
+
+    fn file_extension() -> &'static str {
+        ".pro"
     }
 }
 

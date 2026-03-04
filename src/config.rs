@@ -12,8 +12,18 @@ pub struct Config {
     pub default_model: String,
 }
 
+/// Trait for types that can be serialized to and deserialized from a file using a [Config].
+pub trait FilesFromConfig<T> {
+    fn to_file(&self, config: &Config) -> Result<(), Box<dyn std::error::Error>>;
+    fn from_file(name: &str, config: &Config) -> Result<T, Box<dyn std::error::Error>>;
+    /// Returns the expected file extension for this type.
+    /// it is meant to be used for [from_file] and [to_file].
+    fn file_extension() -> &'static str;
+}
+
+// Todo: refactor using trait FilesFromConfig.
 impl Config {
-    /// Creates a configuration by loading files from the configuration directory.
+    /// Creates a configuration by loading filesfrom the configuration directory.
     /// We use crate [dirs] to determine standard directories.
     pub fn build() -> Result<Config, Box<dyn std::error::Error>> {
         let mut config_path = dirs::config_dir().ok_or("Cannot find a general config directory")?;
@@ -51,5 +61,30 @@ impl Config {
             file_io::to_file(&config_file.to_string_lossy(), false, &conf)?;
             Ok(conf)
         }
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    //Pretty simple, make a config, try to save something.
+    #[test]
+    fn test_config_file_roundtrip() {
+        let config =
+            Config::build().expect("Test Failed, have you run the install.sh script first?");
+        // we use action profile since it is the first fully serializable struct
+        let profile = ActionProfile::new(vec![], "test");
+        profile.to_file(&config).unwrap();
+        let profile2 = ActionProfile::from_file("test", &config).unwrap();
+        //The vecs are empty, not bothering.
+        //action_record has fp members, so Eq is out.
+        assert_eq!(profile2.name, profile.name);
+        std::fs::remove_file(format!(
+            "{}/test{}",
+            config.profile_path,
+            ActionProfile::file_extension()
+        ))
+        .unwrap();
     }
 }
