@@ -9,13 +9,13 @@ use iced::widget::combo_box::State;
 use iced::widget::{button, column, combo_box, container, row, toggler};
 use std::fs::read_dir;
 
+
 #[derive(Default)]
 pub struct MainUIState {
-    active_profile: Option<ActionProfile>, // Define fields here
+    active_profile: Option<ActionProfile>,
     is_recording: bool,
     config: Option<Config>,
     modal_dialog: Option<ModalDialog<MainUIMessage>>,
-    //profiles: Vec<ActionProfile>,
     selected_profile: Option<ActionProfile>,
     combo_profiles: combo_box::State<ActionProfile>,
 }
@@ -36,37 +36,28 @@ pub enum MainUIAction {
 }
 
 impl MainUIState {
-    pub fn new() -> Self {
-        let mut modal_dialog = ModalDialog::new(
+    pub fn new(config: Option<Config>) -> MainUIState {
+        let modal_dialog = ModalDialog::new(
             "Initialization Error",
             "Could not find a configuration. Have you run the installer?",
             MainUIMessage::ModalAffirmative,
             MainUIMessage::ModalNegative,
             false,
         );
-        if let Ok(config) = Config::build() {
-            let active_profile = file_io::from_file(&config.default_profile);
-            let mut working_state = MainUIState {
-                active_profile: active_profile.ok(),
-                is_recording: false,
-                config: Some(config),
-                modal_dialog: Some(modal_dialog),
-                selected_profile: None,
-                combo_profiles: combo_box::State::new(vec![]),
-            };
-            working_state.load_profiles();
-            working_state
-        } else {
-            modal_dialog.show = true;
-            MainUIState {
-                active_profile: None,
-                is_recording: false,
-                config: None,
-                modal_dialog: Some(modal_dialog),
-                selected_profile: None,
-                combo_profiles: combo_box::State::new(vec![]),
-            }
+        let mut working_state = MainUIState {
+            active_profile: None,
+            is_recording: false,
+            config: config.clone(),
+            modal_dialog: Some(modal_dialog),
+            selected_profile: None,
+            combo_profiles: combo_box::State::new(vec![]),
+        };
+        if let Some(cfg_data) = config
+            && let Ok(cfg) = file_io::from_file(&cfg_data.default_profile) {
+                working_state.active_profile = Some(cfg);
+                working_state.load_profiles();
         }
+        working_state
     }
 
     /// Load profiles from the configuration directory.
@@ -89,6 +80,7 @@ impl MainUIState {
                 .iter()
                 .find(|p| p.name == config.default_profile_name);
             self.active_profile = selection.cloned();
+            self.selected_profile = selection.cloned();
             self.combo_profiles = State::with_selection(loaded_profiles.clone(), *selection);
         }
     }

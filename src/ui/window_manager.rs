@@ -1,6 +1,9 @@
+use crate::config::Config;
 use crate::ui::main_ui;
 use crate::ui::profile_manager;
 use iced::{Element, Task};
+use std::sync::Arc;
+use std::sync::Mutex;
 
 enum Window {
     MainUI(main_ui::MainUIState),
@@ -14,6 +17,7 @@ pub enum Message {
 
 pub struct WindowManager {
     window: Window,
+    config: Arc<Mutex<Option<Config>>>,
 }
 
 impl Default for WindowManager {
@@ -24,8 +28,15 @@ impl Default for WindowManager {
 
 impl WindowManager {
     pub fn new() -> Self {
+        let mut config = None;
+        if let Ok(ready_config) = Config::build() {
+            config = Some(ready_config);
+        }
+        let arc_config = Arc::new(Mutex::new(config));
+        let config_clone = arc_config.lock().unwrap().clone();
         WindowManager {
-            window: Window::MainUI(main_ui::MainUIState::new()),
+            window: Window::MainUI(main_ui::MainUIState::new(config_clone)),
+            config: arc_config,
         }
     }
 
@@ -36,13 +47,19 @@ impl WindowManager {
                     let action = main.update(message);
                     match action {
                         main_ui::MainUIAction::NewProfile(data) => {
-                            let profile = profile_manager::ProfileManager::new(data);
-                            self.window = Window::Profile(profile);
+                            let config_clone = self.config.lock().unwrap().clone();
+                            if let Some(config) = config_clone {
+                                let profile = profile_manager::ProfileManager::new(data, config);
+                                self.window = Window::Profile(profile);
+                            }
                             Task::none()
                         }
                         main_ui::MainUIAction::EditProfile(data) => {
-                            let profile = profile_manager::ProfileManager::new(data);
-                            self.window = Window::Profile(profile);
+                            let config_clone = self.config.lock().unwrap().clone();
+                            if let Some(config) = config_clone {
+                                let profile = profile_manager::ProfileManager::new(data, config);
+                                self.window = Window::Profile(profile);
+                            }
                             Task::none()
                         }
                         main_ui::MainUIAction::None => Task::none(),
@@ -56,7 +73,8 @@ impl WindowManager {
                     let action = profile.update(message);
                     match action {
                         profile_manager::ProfileWindowAction::Close => {
-                            let main = main_ui::MainUIState::new();
+                            let config_clone = self.config.lock().unwrap().clone();
+                            let main = main_ui::MainUIState::new(config_clone);
                             self.window = Window::MainUI(main);
                             Task::none()
                         }

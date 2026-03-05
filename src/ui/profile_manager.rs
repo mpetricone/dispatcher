@@ -1,5 +1,6 @@
 use crate::action_profile::ActionProfile;
 use crate::action_record::ActionRecord;
+use crate::config::{Config, FilesFromConfig};
 use crate::ui::profile;
 use crate::ui::profile_edit;
 use iced::Element;
@@ -17,19 +18,22 @@ pub enum Message {
 pub enum ProfileWindowAction {
     Close,
     Save(ActionProfile),
+    Error(String),
     None,
 }
 
 pub struct ProfileManager {
     window: Window,
     stable_profile: ActionProfile,
+    config: Config,
 }
 
 impl ProfileManager {
-    pub fn new(profile: ActionProfile) -> Self {
+    pub fn new(profile: ActionProfile, config: Config) -> Self {
         ProfileManager {
             window: Window::Profile(profile::Profile::new(profile.clone())),
             stable_profile: profile,
+            config,
         }
     }
 
@@ -53,7 +57,12 @@ impl ProfileManager {
                         }
                         profile::ProfileAction::None => (),
                         profile::ProfileAction::Save(data) => {
-                            //TODO Save
+                            if let Err(e) = data.to_file(&self.config) {
+                                return ProfileWindowAction::Error(format!(
+                                    "Failed to save profile: {}",
+                                    e
+                                ));
+                            }
                             return ProfileWindowAction::None;
                         }
                         profile::ProfileAction::Close => {
@@ -74,6 +83,12 @@ impl ProfileManager {
                                 }
                             } else {
                                 self.stable_profile.actions.push(data);
+                            }
+                            if let Err(e) = self.stable_profile.to_file(&self.config) {
+                                return ProfileWindowAction::Error(format!(
+                                    "Failed to save profile: {}",
+                                    e
+                                ));
                             }
                             self.window =
                                 Window::Profile(profile::Profile::new(self.stable_profile.clone()));
