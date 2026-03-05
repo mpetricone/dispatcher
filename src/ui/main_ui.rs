@@ -9,7 +9,6 @@ use iced::widget::combo_box::State;
 use iced::widget::{button, column, combo_box, container, row, toggler};
 use std::fs::read_dir;
 
-
 #[derive(Default)]
 pub struct MainUIState {
     active_profile: Option<ActionProfile>,
@@ -53,9 +52,10 @@ impl MainUIState {
             combo_profiles: combo_box::State::new(vec![]),
         };
         if let Some(cfg_data) = config
-            && let Ok(cfg) = file_io::from_file(&cfg_data.default_profile) {
-                working_state.active_profile = Some(cfg);
-                working_state.load_profiles();
+            && let Ok(cfg) = file_io::from_file(&cfg_data.default_profile)
+        {
+            working_state.active_profile = Some(cfg);
+            working_state.load_profiles();
         }
         working_state
     }

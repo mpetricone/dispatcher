@@ -1,18 +1,21 @@
 use crate::config::Config;
 use crate::ui::main_ui;
+use crate::ui::message_display;
 use crate::ui::profile_manager;
-use iced::{Element, Task};
+use iced::{Element, Task, exit};
 use std::sync::Arc;
 use std::sync::Mutex;
 
 enum Window {
     MainUI(main_ui::MainUIState),
     Profile(profile_manager::ProfileManager),
+    MessageDisplay(message_display::MessageDisplay),
 }
 
 pub enum Message {
     MainUI(main_ui::MainUIMessage),
     Profile(profile_manager::Message),
+    MessageDisplay(message_display::MessageDisplayMessages),
 }
 
 pub struct WindowManager {
@@ -78,7 +81,28 @@ impl WindowManager {
                             self.window = Window::MainUI(main);
                             Task::none()
                         }
+                        profile_manager::ProfileWindowAction::Error(e) => {
+                            self.window =
+                                Window::MessageDisplay(message_display::MessageDisplay::new_ok(&e));
+                            Task::none()
+                        }
                         _ => Task::none(),
+                    }
+                } else {
+                    Task::none()
+                }
+            }
+            Message::MessageDisplay(message) => {
+                if let Window::MessageDisplay(display) = &mut self.window {
+                    let action = display.update(message);
+                    match action {
+                        message_display::MessageDisplayMessages::ExitApplication => exit(),
+                        _ => {
+                            self.window = Window::MainUI(main_ui::MainUIState::new(
+                                self.config.lock().unwrap().clone(),
+                            ));
+                            Task::none()
+                        }
                     }
                 } else {
                     Task::none()
@@ -91,6 +115,7 @@ impl WindowManager {
         match &self.window {
             Window::MainUI(main) => main.view().map(Message::MainUI),
             Window::Profile(profile) => profile.view().map(Message::Profile),
+            Window::MessageDisplay(display) => display.view().map(Message::MessageDisplay),
         }
     }
 }

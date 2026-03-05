@@ -1,4 +1,5 @@
 pub mod main_ui;
+pub mod message_display;
 mod modal_dialog;
 pub mod profile;
 pub mod profile_edit;

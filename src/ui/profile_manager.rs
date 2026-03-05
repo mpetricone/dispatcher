@@ -79,7 +79,10 @@ impl ProfileManager {
                                 if index < self.stable_profile.actions.len() {
                                     self.stable_profile.actions[index] = data;
                                 } else {
-                                    self.stable_profile.actions.push(data);
+                                    return ProfileWindowAction::Error(format!(
+                                        "Invalid action index: {}",
+                                        index
+                                    ));
                                 }
                             } else {
                                 self.stable_profile.actions.push(data);

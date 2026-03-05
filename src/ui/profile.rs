@@ -107,7 +107,7 @@ impl Profile {
                 self.selected_name = name.name.clone();
             }
             ProfileMessage::Add => {
-                return ProfileAction::Edit(Some(0), vec![ActionRecord::new("", "", vec![])]);
+                return ProfileAction::Edit(None, vec![ActionRecord::new("", "", vec![])]);
             }
             ProfileMessage::Edit => {
                 return ProfileAction::Edit(self.selected, self.profile.actions.clone());
