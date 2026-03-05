@@ -1,3 +1,4 @@
+//! # Profile Management
 use crate::action_profile::ActionProfile;
 use crate::action_record::ActionRecord;
 use iced::widget::{button, column, row, text};

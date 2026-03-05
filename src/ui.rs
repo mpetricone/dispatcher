@@ -1,3 +1,4 @@
+//! GUI module
 pub mod main_ui;
 pub mod message_display;
 mod modal_dialog;

@@ -1,3 +1,5 @@
+//! # Profile Window Manager
+//! Controls what Profile window is shown, and handles Profile events.
 use crate::action_profile::ActionProfile;
 use crate::action_record::ActionRecord;
 use crate::config::{Config, FilesFromConfig};

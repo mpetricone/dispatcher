@@ -17,7 +17,7 @@ pub trait FilesFromConfig<T> {
     fn to_file(&self, config: &Config) -> Result<(), Box<dyn std::error::Error>>;
     fn from_file(name: &str, config: &Config) -> Result<T, Box<dyn std::error::Error>>;
     /// Returns the expected file extension for this type.
-    /// it is meant to be used for [from_file] and [to_file].
+    /// it is meant to be used internally, but there is no harm in other uses.
     fn file_extension() -> &'static str;
 }
 

@@ -1,12 +1,14 @@
+//! A Message Pop Up Display template.
 use iced::Element;
 use iced::widget::{Row, button, column, row, text};
 
+/// A message display with buttons
 pub struct MessageDisplay {
     msg: String,
     buttons: Vec<MessageButton>,
 }
 
-/// Display a message, with buttons
+/// A button for a [MessageDisplay]
 pub struct MessageButton {
     label: String,
     event: MessageDisplayMessages,
@@ -28,7 +30,7 @@ impl MessageDisplay {
         }
     }
 
-    // Builds a new [MessageDisplay] with an Ok button
+    /// Builds a new [MessageDisplay] with an Ok button
     pub fn new_ok(msg: &str) -> Self {
         MessageDisplay {
             msg: msg.to_string(),

@@ -1,3 +1,7 @@
+//! # Application Core Window Manager
+//! Handles application windows and events.
+//! It can delegate to other window managers.
+//! See [iced] Scaling Applications
 use crate::config::Config;
 use crate::ui::main_ui;
 use crate::ui::message_display;

@@ -1,3 +1,4 @@
+//! # Profile Editing, namely, Actions
 use crate::action_record::{ActionRecord, ActionRecordStreamFormatted};
 use iced::Element;
 use iced::widget::{button, column, row, text, text_input};

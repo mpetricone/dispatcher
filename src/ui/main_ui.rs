@@ -1,4 +1,4 @@
-/// * Main UI and application configuration.
+//! # The primary Apllication Window.
 use crate::action_profile::ActionProfile;
 use crate::config::Config;
 use crate::file_io;
