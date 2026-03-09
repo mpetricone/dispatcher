@@ -5,6 +5,10 @@ use voice_stream::VoiceStream;
 use voice_stream::cpal::traits::StreamTrait;
 use vosk::{Model, Recognizer};
 
+pub struct VoiceReqHandle {
+    pub tx_commands: mpsc::Sender<VoiceReqCommands>,
+}
+
 /// # Vosk requires i16 audio data, but we can only capture in f32
 trait AudioThunk {
     fn to_i16(&self) -> Vec<i16>;
@@ -39,13 +43,13 @@ impl AudioThunk for Vec<f32> {
 /// I am happy with it at this point, except for the need to thunk to Vosk.
 /// I suspect the thunking may be causing delays, but I have not found a
 /// microphone input library that records data as i16
-async fn voice_req_loop(vr_context: &mut VoiceReqContext) -> Result<(), Box<dyn Error>> {
-    let vmodel = Model::new("./vosk-model-small-en-us-0.15").unwrap();
-    let mut vrec = Recognizer::new(&vmodel, 16000.0).unwrap();
+async fn voice_req_loop(vr_context: &mut VoiceReqContext) -> Result<(), Box<dyn Error + Send + Sync>> {
+    let vmodel = Model::new("./vosk-model-en-us-0.22-lgraph").ok_or_else(|| std::io::Error::new(std::io::ErrorKind::Other, "Failed to load vosk model"))?;
+    let mut vrec = Recognizer::new(&vmodel, 16000.0).ok_or_else(|| std::io::Error::new(std::io::ErrorKind::Other, "Failed to create recognizer"))?;
 
-    let (voice_stream, mut rx) = VoiceStream::default_device().unwrap();
+    let (voice_stream, mut rx) = VoiceStream::default_device().map_err(|e| std::io::Error::new(std::io::ErrorKind::Other, format!("Failed to get default audio device: {:?}", e)))?;
 
-    voice_stream.play().unwrap();
+    voice_stream.play().map_err(|e| std::io::Error::new(std::io::ErrorKind::Other, format!("Failed to start audio: {:?}", e)))?;
 
     while let Some(r) = rx.recv().await {
         if !r.is_empty() {
@@ -55,9 +59,10 @@ async fn voice_req_loop(vr_context: &mut VoiceReqContext) -> Result<(), Box<dyn 
             match vr_context.rx_commands.try_recv() {
                 Ok(c) => {
                     if c == VoiceReqCommands::Stop {
+                        drop(voice_stream);
                         let _ = vr_context.tx_results.send(VoiceReqResults::Halting).await;
                         rx.close();
-                        continue;
+                        break;
                     }
                 }
                 _ => {}
@@ -104,14 +109,17 @@ pub struct VoiceReqContext {
 ///
 /// This function reports results on any voice recognition
 /// for command processing, look at [crate::primary_dispatcher]
-pub async fn start_voice_req(
-    rx_commands: mpsc::Receiver<VoiceReqCommands>,
+pub fn start_voice_req(
     tx_results: mpsc::Sender<VoiceReqResults>,
-) -> Result<(), Box<dyn Error>> {
+) -> Result<VoiceReqHandle, Box<dyn Error + Send + Sync>> {
+    let (tx_commands_internal, rx_commands) = mpsc::channel(10);
     let mut vr = VoiceReqContext {
         rx_commands,
         tx_results,
     };
-    thread::spawn(async move || -> Result<(), Box<dyn Error>> { voice_req_loop(&mut vr).await });
-    Ok(())
+    thread::spawn(move || -> Result<(), Box<dyn Error + Send + Sync>> {
+        let rt = tokio::runtime::Runtime::new().unwrap();
+        rt.block_on(voice_req_loop(&mut vr))
+    });
+    Ok(VoiceReqHandle { tx_commands: tx_commands_internal })
 }

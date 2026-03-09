@@ -3,10 +3,13 @@
 //! It can delegate to other window managers.
 //! See [iced] Scaling Applications
 use crate::config::Config;
+use crate::primary_dispatcher;
 use crate::ui::main_ui;
 use crate::ui::message_display;
 use crate::ui::profile_manager;
-use iced::{Element, Task, exit};
+use crate::voice_req::VoiceReqCommands;
+use iced::{exit, Element, Task};
+use rdev;
 use std::sync::Arc;
 use std::sync::Mutex;
 
@@ -25,6 +28,7 @@ pub enum Message {
 pub struct WindowManager {
     window: Window,
     config: Arc<Mutex<Option<Config>>>,
+    voice_thread_handle: Option<primary_dispatcher::VoiceListenerThreadHandle>,
 }
 
 impl Default for WindowManager {
@@ -42,8 +46,9 @@ impl WindowManager {
         let arc_config = Arc::new(Mutex::new(config));
         let config_clone = arc_config.lock().unwrap().clone();
         WindowManager {
-            window: Window::MainUI(main_ui::MainUIState::new(config_clone)),
+            window: Window::MainUI(main_ui::MainUIState::new(config_clone, None)),
             config: arc_config,
+            voice_thread_handle: None,
         }
     }
 
@@ -69,7 +74,16 @@ impl WindowManager {
                             }
                             Task::none()
                         }
+                        main_ui::MainUIAction::Error(e) => {
+                            self.window =
+                                Window::MessageDisplay(message_display::MessageDisplay::new_ok(&e));
+                            Task::none()
+                        }
                         main_ui::MainUIAction::None => Task::none(),
+                        main_ui::MainUIAction::VoiceHandle(handle) => {
+                            self.voice_thread_handle = Some(handle);
+                            Task::none()
+                        }
                     }
                 } else {
                     Task::none()
@@ -81,7 +95,9 @@ impl WindowManager {
                     match action {
                         profile_manager::ProfileWindowAction::Close => {
                             let config_clone = self.config.lock().unwrap().clone();
-                            let main = main_ui::MainUIState::new(config_clone);
+                            let voice_handle =
+                                self.voice_thread_handle.as_ref().map(|h| h.handle.clone());
+                            let main = main_ui::MainUIState::new(config_clone, voice_handle);
                             self.window = Window::MainUI(main);
                             Task::none()
                         }
@@ -100,10 +116,19 @@ impl WindowManager {
                 if let Window::MessageDisplay(display) = &mut self.window {
                     let action = display.update(message);
                     match action {
-                        message_display::MessageDisplayMessages::ExitApplication => exit(),
+                        message_display::MessageDisplayMessages::ExitApplication => {
+                            if let Some(handle) = self.voice_thread_handle.take() {
+                                let _ = handle.handle.tx_commands.try_send(VoiceReqCommands::Stop);
+                                std::thread::sleep(std::time::Duration::from_millis(200));
+                                handle.wait_for_shutdown();
+                            }
+                            rdev::stop_listening();
+                            exit()
+                        }
                         _ => {
                             self.window = Window::MainUI(main_ui::MainUIState::new(
                                 self.config.lock().unwrap().clone(),
+                                self.voice_thread_handle.as_ref().map(|h| h.handle.clone()),
                             ));
                             Task::none()
                         }

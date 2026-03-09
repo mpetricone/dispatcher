@@ -3,7 +3,9 @@ use crate::action_profile::ActionProfile;
 use crate::config::Config;
 use crate::file_io;
 use crate::file_io::from_file;
+use crate::primary_dispatcher::{self, VoiceListenerHandle};
 use crate::ui::modal_dialog::ModalDialog;
+use crate::voice_req::VoiceReqCommands;
 use iced::Element;
 use iced::widget::combo_box::State;
 use iced::widget::{button, column, combo_box, container, row, toggler};
@@ -17,6 +19,7 @@ pub struct MainUIState {
     modal_dialog: Option<ModalDialog<MainUIMessage>>,
     selected_profile: Option<ActionProfile>,
     combo_profiles: combo_box::State<ActionProfile>,
+    voice_handle: Option<VoiceListenerHandle>,
 }
 
 #[derive(Debug, Clone)]
@@ -31,11 +34,13 @@ pub enum MainUIMessage {
 pub enum MainUIAction {
     EditProfile(ActionProfile),
     NewProfile(ActionProfile),
+    Error(String),
     None,
+    VoiceHandle(primary_dispatcher::VoiceListenerThreadHandle),
 }
 
 impl MainUIState {
-    pub fn new(config: Option<Config>) -> MainUIState {
+    pub fn new(config: Option<Config>, voice_handle: Option<primary_dispatcher::VoiceListenerHandle>) -> MainUIState {
         let modal_dialog = ModalDialog::new(
             "Initialization Error",
             "Could not find a configuration. Have you run the installer?",
@@ -50,6 +55,7 @@ impl MainUIState {
             modal_dialog: Some(modal_dialog),
             selected_profile: None,
             combo_profiles: combo_box::State::new(vec![]),
+            voice_handle,
         };
         if let Some(cfg_data) = config
             && let Ok(cfg) = file_io::from_file(&cfg_data.default_profile)
@@ -115,6 +121,28 @@ impl MainUIState {
             MainUIMessage::ToggleRecording(_) => {
                 if self.active_profile.is_some() {
                     self.is_recording = !self.is_recording;
+                    if self.is_recording {
+                        if let Some(profile) = &self.active_profile {
+                            match primary_dispatcher::start_listener(profile.actions.clone()) {
+                                Ok(thread_handle) => {
+                                    self.voice_handle = Some(thread_handle.handle.clone());
+                                    action = MainUIAction::VoiceHandle(thread_handle);
+                                }
+                                Err(e) => {
+                                    action = MainUIAction::Error(format!(
+                                        "Failed to start voice recognition: {}",
+                                        e
+                                    ));
+                                    self.is_recording = false;
+                                }
+                            }
+                        }
+                    } else {
+                        if let Some(handle) = &self.voice_handle {
+                            let _ = handle.tx_commands.try_send(VoiceReqCommands::Stop);
+                        }
+                        self.voice_handle = None;
+                    }
                 } else {
                     if let Some(diag) = &mut self.modal_dialog {
                         diag.show_message(
@@ -123,7 +151,6 @@ impl MainUIState {
                         );
                     }
                     self.is_recording = false;
-                    //TODO some type of popup
                 };
             }
             MainUIMessage::SelectProfile(prof) => {
