@@ -1,10 +1,14 @@
 use crate::action_record::ActionRecord;
+use crate::voice_req::VoiceReqCommands;
 use crate::input_dispatcher;
 use crate::voice_req;
 use crate::voice_req::VoiceReqResults;
 use std::sync::{Arc, Mutex};
 use std::time::Duration;
 use tokio::sync::mpsc;
+use std::thread;
+use tokio::runtime::Builder;
+use std::io;
 
 /// Sends keyboard simulations to the GUI/X11
 fn process_voice_input(recognized_string: &str, action_list: &[ActionRecord]) {
@@ -23,19 +27,25 @@ fn process_voice_input(recognized_string: &str, action_list: &[ActionRecord]) {
 }
 
 /// # Listen for voice input and send reconized commands to [input_dispatcher]
-pub async fn listener_loop(action_list: Vec<ActionRecord>) {
-    let (_tx_commands, rx_commands) = mpsc::channel(10);
+pub async fn listener_loop(rx_commands: mpsc::Receiver<VoiceReqCommands>, action_list: Vec<ActionRecord>) {
     let (tx_results, mut rx_results) = mpsc::channel(50);
 
-    match voice_req::start_voice_req(rx_commands, tx_results).await {
-        Ok(_) => {
-            while let Some(r) = rx_results.recv().await {
-                match r {
-                    VoiceReqResults::Recognized(e) => process_voice_input(&e, &action_list),
-                    VoiceReqResults::Halting => rx_results.close(),
-                }
-            }
+    let _handle = voice_req::start_voice_req(rx_commands, tx_results);
+
+    while let Some(r) = rx_results.recv().await {
+        match r {
+            VoiceReqResults::Recognized(e) => process_voice_input(&e, &action_list),
+            VoiceReqResults::Halting => rx_results.close(),
         }
-        Err(e) => eprintln!("Got Error in main listener loop: {}", e),
     }
+}
+
+pub fn begin_dispatch(action_list: Vec<ActionRecord>, rx_commands: mpsc::Receiver<VoiceReqCommands>) -> io::Result<()> {
+    let rt = Builder::new_current_thread()
+        .enable_all()
+        .build()?;
+    thread::spawn( move || {
+        rt.block_on(listener_loop( rx_commands, action_list));
+    });
+    Ok(())
 }

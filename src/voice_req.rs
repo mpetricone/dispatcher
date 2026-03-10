@@ -107,11 +107,10 @@ pub struct VoiceReqContext {
 pub async fn start_voice_req(
     rx_commands: mpsc::Receiver<VoiceReqCommands>,
     tx_results: mpsc::Sender<VoiceReqResults>,
-) -> Result<(), Box<dyn Error>> {
+)  {
     let mut vr = VoiceReqContext {
         rx_commands,
         tx_results,
     };
-    thread::spawn(async move || -> Result<(), Box<dyn Error>> { voice_req_loop(&mut vr).await });
-    Ok(())
+    thread::spawn(async move ||{ voice_req_loop(&mut vr).await });
 }
