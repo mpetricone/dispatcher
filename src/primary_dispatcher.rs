@@ -44,8 +44,8 @@ pub fn begin_dispatch(action_list: Vec<ActionRecord>, rx_commands: mpsc::Receive
     let rt = Builder::new_current_thread()
         .enable_all()
         .build()?;
-    thread::spawn( move || {
-        rt.block_on(listener_loop( rx_commands, action_list));
+    thread::spawn(move || {
+        rt.block_on(listener_loop(rx_commands, action_list));
     });
     Ok(())
 }

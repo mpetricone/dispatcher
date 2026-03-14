@@ -149,11 +149,9 @@ impl MainUIState {
                     match self.is_recording {
                         true => {
                             self.stop_listening();
-                            self.is_recording = false;
                         },
                         false => {
                             self.start_listening();
-                            self.is_recording = true;
 
                         },
                     }

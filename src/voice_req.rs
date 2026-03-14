@@ -1,5 +1,4 @@
 use std::error::Error;
-use std::thread;
 use tokio::sync::mpsc;
 use voice_stream::VoiceStream;
 use voice_stream::cpal::traits::StreamTrait;
@@ -40,7 +39,7 @@ impl AudioThunk for Vec<f32> {
 /// I suspect the thunking may be causing delays, but I have not found a
 /// microphone input library that records data as i16
 async fn voice_req_loop(vr_context: &mut VoiceReqContext) -> Result<(), Box<dyn Error>> {
-    let vmodel = Model::new("./vosk-model-small-en-us-0.15").unwrap();
+    let vmodel = Model::new("./vosk-model-en-us-0.22-lgraph").unwrap();
     let mut vrec = Recognizer::new(&vmodel, 16000.0).unwrap();
 
     let (voice_stream, mut rx) = VoiceStream::default_device().unwrap();
@@ -104,13 +103,17 @@ pub struct VoiceReqContext {
 ///
 /// This function reports results on any voice recognition
 /// for command processing, look at [crate::primary_dispatcher]
-pub async fn start_voice_req(
+pub fn start_voice_req(
     rx_commands: mpsc::Receiver<VoiceReqCommands>,
     tx_results: mpsc::Sender<VoiceReqResults>,
-)  {
-    let mut vr = VoiceReqContext {
-        rx_commands,
-        tx_results,
-    };
-    thread::spawn(async move ||{ voice_req_loop(&mut vr).await });
+) -> tokio::task::JoinHandle<()> {
+    tokio::spawn(async move {
+        let mut vr = VoiceReqContext {
+            rx_commands,
+            tx_results,
+        };
+        if let Err(e) = voice_req_loop(&mut vr).await {
+            eprintln!("Voice recognition error: {}", e);
+        }
+    })
 }
