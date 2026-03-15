@@ -40,7 +40,7 @@ impl AudioThunk for Vec<f32> {
 /// microphone input library that records data as i16
 async fn voice_req_loop(vr_context: &mut VoiceReqContext) -> Result<(), Box<dyn Error>> {
     let vmodel = Model::new("./vosk-model-en-us-0.22-lgraph").unwrap();
-    let mut vrec = Recognizer::new(&vmodel, 16000.0).unwrap();
+    let mut vrec = Recognizer::new_with_grammar(&vmodel, 16000.0,&vr_context.grammar[..]).unwrap();
 
     let (voice_stream, mut rx) = VoiceStream::default_device().unwrap();
 
@@ -96,6 +96,7 @@ pub enum VoiceReqResults {
 pub struct VoiceReqContext {
     tx_results: mpsc::Sender<VoiceReqResults>,
     rx_commands: mpsc::Receiver<VoiceReqCommands>,
+    grammar: Vec<String>
 }
 
 /// # Start a thread for voice recognition.
@@ -106,11 +107,13 @@ pub struct VoiceReqContext {
 pub fn start_voice_req(
     rx_commands: mpsc::Receiver<VoiceReqCommands>,
     tx_results: mpsc::Sender<VoiceReqResults>,
+    grammar: Vec<String>,
 ) -> tokio::task::JoinHandle<()> {
     tokio::spawn(async move {
         let mut vr = VoiceReqContext {
             rx_commands,
             tx_results,
+            grammar,
         };
         if let Err(e) = voice_req_loop(&mut vr).await {
             eprintln!("Voice recognition error: {}", e);

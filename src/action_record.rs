@@ -1,5 +1,6 @@
 use crate::input_recorder;
 use crate::input_recorder::InputEvent;
+use crate::normalize::Normalizer;
 use rdev;
 use serde::{Deserialize, Serialize};
 use std::error::Error;
@@ -17,6 +18,13 @@ pub struct ActionRecord {
 }
 
 pub struct ActionRecordStreamFormatted<'a>(pub &'a ActionRecord);
+
+impl Normalizer for ActionRecord {
+    fn normalize(&mut self) -> &mut Self {
+        self.activator_text = self.activator_text.to_lowercase();
+        self
+    }
+}
 
 impl<'a> Display for ActionRecordStreamFormatted<'a> {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {

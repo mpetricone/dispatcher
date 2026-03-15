@@ -1,5 +1,6 @@
 use crate::action_profile::ActionProfile;
 use crate::file_io;
+use crate::normalize::Normalizer;
 use serde::{Deserialize, Serialize};
 
 /// Application configuration.
@@ -14,11 +15,18 @@ pub struct Config {
 
 /// Trait for types that can be serialized to and deserialized from a file using a [Config].
 pub trait FilesFromConfig<T> {
-    fn to_file(&self, config: &Config) -> Result<(), Box<dyn std::error::Error>>;
+    fn to_file(&mut self, config: &Config) -> Result<(), Box<dyn std::error::Error>>;
     fn from_file(name: &str, config: &Config) -> Result<T, Box<dyn std::error::Error>>;
     /// Returns the expected file extension for this type.
     /// it is meant to be used internally, but there is no harm in other uses.
     fn file_extension() -> &'static str;
+}
+
+impl Normalizer for Config {
+    /// Nothing needed.
+    fn normalize(&mut self) -> &mut Self {
+        self
+    }
 }
 
 // Todo: refactor using trait FilesFromConfig.
@@ -47,18 +55,18 @@ impl Config {
         if config_file.exists() {
             file_io::from_file(&config_file.to_string_lossy())
         } else {
-            let empty_profile = ActionProfile::new(vec![], "default");
+            let mut empty_profile = ActionProfile::new(vec![], "default");
             let mut default_profile = profile_path.clone();
             default_profile.push("default.pro");
-            file_io::to_file(&default_profile.to_string_lossy(), false, &empty_profile)?;
-            let conf = Config {
+            file_io::to_file(&default_profile.to_string_lossy(), false, &mut empty_profile)?;
+            let mut conf = Config {
                 profile_path: profile_path.to_string_lossy().to_string(),
                 model_path: model_path.to_string_lossy().to_string(),
                 default_profile: default_profile.to_string_lossy().to_string(),
                 default_profile_name: empty_profile.name.clone(),
                 default_model: model_path.to_string_lossy().to_string(),
             };
-            file_io::to_file(&config_file.to_string_lossy(), false, &conf)?;
+            file_io::to_file(&config_file.to_string_lossy(), false, &mut conf)?;
             Ok(conf)
         }
     }

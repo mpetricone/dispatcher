@@ -1,5 +1,6 @@
 use crate::action_record::ActionRecord;
 use crate::config::{Config, FilesFromConfig};
+use crate::normalize::Normalizer;
 use crate::file_io;
 use serde::{Deserialize, Serialize};
 use std::error::Error;
@@ -21,9 +22,17 @@ impl std::fmt::Display for ActionProfile {
         f.write_str(&self.name)
     }
 }
+impl Normalizer for ActionProfile {
+    fn normalize(&mut self) -> &mut Self {
+        for action in &mut self.actions {
+            action.normalize();
+        }
+        self
+    }
+}
 
 impl FilesFromConfig<ActionProfile> for ActionProfile {
-    fn to_file(&self, config: &Config) -> Result<(), Box<dyn std::error::Error>> {
+    fn to_file(&mut self, config: &Config) -> Result<(), Box<dyn std::error::Error>> {
         let path: PathBuf = [
             &config.profile_path,
             &format!("{}{}", self.name, ActionProfile::file_extension()),

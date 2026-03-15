@@ -24,3 +24,4 @@ pub mod input_recorder;
 pub mod primary_dispatcher;
 pub mod ui;
 pub mod voice_req;
+pub mod normalize;

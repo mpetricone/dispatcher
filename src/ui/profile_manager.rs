@@ -58,7 +58,7 @@ impl ProfileManager {
                             }
                         }
                         profile::ProfileAction::None => (),
-                        profile::ProfileAction::Save(data) => {
+                        profile::ProfileAction::Save(mut data) => {
                             if let Err(e) = data.to_file(&self.config) {
                                 return ProfileWindowAction::Error(format!(
                                     "Failed to save profile: {}",

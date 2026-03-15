@@ -30,7 +30,11 @@ fn process_voice_input(recognized_string: &str, action_list: &[ActionRecord]) {
 pub async fn listener_loop(rx_commands: mpsc::Receiver<VoiceReqCommands>, action_list: Vec<ActionRecord>) {
     let (tx_results, mut rx_results) = mpsc::channel(50);
 
-    let _handle = voice_req::start_voice_req(rx_commands, tx_results);
+    let mut activators: Vec<_> = action_list.iter().map(|x|
+        x.activator_text.clone().to_lowercase()
+    ).collect();
+    activators.push("[unk]".to_string());
+    let _handle = voice_req::start_voice_req(rx_commands, tx_results, activators);
 
     while let Some(r) = rx_results.recv().await {
         match r {

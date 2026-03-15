@@ -6,6 +6,7 @@ use serde_json;
 use std::error::Error;
 use std::fs::OpenOptions;
 use std::io::{BufReader, BufWriter};
+use crate::normalize::Normalizer;
 ///
 /// This is designed to read any struct implementing [serde::Deserialize]
 /// from file in json format.
@@ -20,10 +21,10 @@ pub fn from_file<T: de::DeserializeOwned>(file_path: &str) -> Result<T, Box<dyn 
 /// Writes any struct implementing [serde::Serialize] to file, with the option to truncate.
 ///
 /// to_file will always attempt to create a file if none exists.
-pub fn to_file<T: serde::Serialize>(
+pub fn to_file<T: serde::Serialize + Normalizer>(
     file_path: &str,
     truncate: bool,
-    data: T,
+    data: &mut T,
 ) -> Result<(), Box<dyn Error>> {
     let fh = OpenOptions::new()
         .write(true)
@@ -31,5 +32,6 @@ pub fn to_file<T: serde::Serialize>(
         .truncate(truncate)
         .open(file_path)?;
     let bufw = BufWriter::new(fh);
+    data.normalize();
     Ok(serde_json::to_writer(bufw, &data)?)
 }
