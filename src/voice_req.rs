@@ -39,13 +39,12 @@ impl AudioThunk for Vec<f32> {
 /// I suspect the thunking may be causing delays, but I have not found a
 /// microphone input library that records data as i16
 async fn voice_req_loop(vr_context: &mut VoiceReqContext) -> Result<(), Box<dyn Error>> {
-    let vmodel = Model::new("./vosk-model-en-us-0.22-lgraph").ok_or("Failed to load Vosk model")?;
+    let vmodel = Model::new("./vosk-model-small-en-us-0.15").ok_or("Failed to load Vosk model")?;
     let mut vrec = Recognizer::new_with_grammar(&vmodel, 16000.0, &vr_context.grammar[..])
         .ok_or("Failed to create Vosk recognizer")?;
 
     if let Ok((voice_stream, mut rx)) = VoiceStream::default_device() {
         voice_stream.play()?;
-
         while let Some(r) = rx.recv().await {
             if !r.is_empty() {
                 let _ = vrec.accept_waveform(&r.to_i16());
@@ -72,6 +71,8 @@ async fn voice_req_loop(vr_context: &mut VoiceReqContext) -> Result<(), Box<dyn 
     } else {
         return Err("Failed to open audio device".into());
     }
+    drop(vrec);
+    drop(vmodel);
     Ok(())
 }
 
