@@ -39,35 +39,38 @@ impl AudioThunk for Vec<f32> {
 /// I suspect the thunking may be causing delays, but I have not found a
 /// microphone input library that records data as i16
 async fn voice_req_loop(vr_context: &mut VoiceReqContext) -> Result<(), Box<dyn Error>> {
-    let vmodel = Model::new("./vosk-model-en-us-0.22-lgraph").unwrap();
-    let mut vrec = Recognizer::new_with_grammar(&vmodel, 16000.0,&vr_context.grammar[..]).unwrap();
+    let vmodel = Model::new("./vosk-model-en-us-0.22-lgraph").ok_or("Failed to load Vosk model")?;
+    let mut vrec = Recognizer::new_with_grammar(&vmodel, 16000.0, &vr_context.grammar[..])
+        .ok_or("Failed to create Vosk recognizer")?;
 
-    let (voice_stream, mut rx) = VoiceStream::default_device().unwrap();
+    if let Ok((voice_stream, mut rx)) = VoiceStream::default_device() {
+        voice_stream.play()?;
 
-    voice_stream.play().unwrap();
-
-    while let Some(r) = rx.recv().await {
-        if !r.is_empty() {
-            let _ = vrec.accept_waveform(&r.to_i16());
-            // Clippy, my fried, this is to allow future growth
-            #[allow(clippy::single_match)]
-            match vr_context.rx_commands.try_recv() {
-                Ok(c) => {
-                    if c == VoiceReqCommands::Stop {
-                        let _ = vr_context.tx_results.send(VoiceReqResults::Halting).await;
-                        rx.close();
-                        continue;
+        while let Some(r) = rx.recv().await {
+            if !r.is_empty() {
+                let _ = vrec.accept_waveform(&r.to_i16());
+                // Clippy, my fried, this is to allow future growth
+                #[allow(clippy::single_match)]
+                match vr_context.rx_commands.try_recv() {
+                    Ok(c) => {
+                        if c == VoiceReqCommands::Stop {
+                            let _ = vr_context.tx_results.send(VoiceReqResults::Halting).await;
+                            rx.close();
+                            continue;
+                        }
                     }
+                    _ => {}
                 }
-                _ => {}
-            }
-            if let Some(heard) = vrec.final_result().single() {
-                vr_context
-                    .tx_results
-                    .send(VoiceReqResults::Recognized(heard.text.to_string()))
-                    .await?;
+                if let Some(heard) = vrec.final_result().single() {
+                    vr_context
+                        .tx_results
+                        .send(VoiceReqResults::Recognized(heard.text.to_string()))
+                        .await?;
+                }
             }
         }
+    } else {
+        return Err("Failed to open audio device".into());
     }
     Ok(())
 }
@@ -96,7 +99,7 @@ pub enum VoiceReqResults {
 pub struct VoiceReqContext {
     tx_results: mpsc::Sender<VoiceReqResults>,
     rx_commands: mpsc::Receiver<VoiceReqCommands>,
-    grammar: Vec<String>
+    grammar: Vec<String>,
 }
 
 /// # Start a thread for voice recognition.

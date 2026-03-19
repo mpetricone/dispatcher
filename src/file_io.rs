@@ -1,12 +1,12 @@
 //! File IO
 //! We'll be storing to json whenever possible
+use crate::normalize::Normalizer;
 use serde;
 use serde::de;
 use serde_json;
 use std::error::Error;
 use std::fs::OpenOptions;
 use std::io::{BufReader, BufWriter};
-use crate::normalize::Normalizer;
 ///
 /// This is designed to read any struct implementing [serde::Deserialize]
 /// from file in json format.

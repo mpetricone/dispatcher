@@ -1,16 +1,16 @@
 //! # The primary Apllication Window.
 use crate::action_profile::ActionProfile;
-use crate::primary_dispatcher;
 use crate::config::Config;
 use crate::file_io;
 use crate::file_io::from_file;
+use crate::primary_dispatcher;
 use crate::ui::modal_dialog::ModalDialog;
 use crate::voice_req::VoiceReqCommands;
-use tokio::sync::mpsc;
 use iced::Element;
 use iced::widget::combo_box::State;
 use iced::widget::{button, column, combo_box, container, row, toggler};
 use std::fs::read_dir;
+use tokio::sync::mpsc;
 
 #[derive(Default)]
 pub struct MainUIState {
@@ -114,9 +114,9 @@ impl MainUIState {
         }
     }
 
-    fn start_listening(&mut self){
+    fn start_listening(&mut self) {
         if let Some(profile) = &self.active_profile {
-            let (tx,rx) = mpsc::channel(10);
+            let (tx, rx) = mpsc::channel(10);
             self.voice_command_tx = Some(tx);
             if let Err(e) = primary_dispatcher::begin_dispatch(profile.actions.clone(), rx) {
                 if let Some(diag) = &mut self.modal_dialog {
@@ -130,14 +130,13 @@ impl MainUIState {
 
     fn stop_listening(&mut self) {
         if let Some(tx) = &self.voice_command_tx {
-            if let Err(e) = tx.blocking_send(VoiceReqCommands::Stop) {
-                if let Some(diag) = &mut self.modal_dialog {
-                    diag.show_message("Error Listening", &e.to_string());
-                }
-            } else {
-                self.is_recording = false;
-                self.voice_command_tx = None;
+            if let Err(e) = tx.blocking_send(VoiceReqCommands::Stop)
+                && let Some(diag) = &mut self.modal_dialog
+            {
+                diag.show_message("Error Listening", &e.to_string());
             }
+            self.is_recording = false;
+            self.voice_command_tx = None;
         }
     }
 
@@ -149,11 +148,10 @@ impl MainUIState {
                     match self.is_recording {
                         true => {
                             self.stop_listening();
-                        },
+                        }
                         false => {
                             self.start_listening();
-
-                        },
+                        }
                     }
                 } else {
                     if let Some(diag) = &mut self.modal_dialog {
@@ -173,6 +171,7 @@ impl MainUIState {
                 }
             }
             MainUIMessage::EditProfile => {
+                self.stop_listening();
                 if let Some(profile) = &self.selected_profile {
                     action = MainUIAction::EditProfile(profile.clone());
                 } else if let Some(diag) = &mut self.modal_dialog {

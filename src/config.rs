@@ -58,7 +58,11 @@ impl Config {
             let mut empty_profile = ActionProfile::new(vec![], "default");
             let mut default_profile = profile_path.clone();
             default_profile.push("default.pro");
-            file_io::to_file(&default_profile.to_string_lossy(), false, &mut empty_profile)?;
+            file_io::to_file(
+                &default_profile.to_string_lossy(),
+                false,
+                &mut empty_profile,
+            )?;
             let mut conf = Config {
                 profile_path: profile_path.to_string_lossy().to_string(),
                 model_path: model_path.to_string_lossy().to_string(),

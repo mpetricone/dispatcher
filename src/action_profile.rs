@@ -1,7 +1,7 @@
 use crate::action_record::ActionRecord;
 use crate::config::{Config, FilesFromConfig};
-use crate::normalize::Normalizer;
 use crate::file_io;
+use crate::normalize::Normalizer;
 use serde::{Deserialize, Serialize};
 use std::error::Error;
 use std::path::PathBuf;
