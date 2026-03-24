@@ -21,12 +21,16 @@ pub struct MainUIState {
     selected_profile: Option<ActionProfile>,
     combo_profiles: combo_box::State<ActionProfile>,
     voice_command_tx: Option<mpsc::Sender<VoiceReqCommands>>,
+    vosk_model: Option<String>,
+    selected_model: Option<String>,
+    vosk_models: combo_box::State<String>,
 }
 
 #[derive(Debug, Clone)]
 pub enum MainUIMessage {
     ToggleRecording(bool),
     SelectProfile(ActionProfile),
+    SelectModel(String),
     EditProfile,
     ModalAffirmative,
     ModalNegative,
@@ -55,12 +59,16 @@ impl MainUIState {
             selected_profile: None,
             combo_profiles: combo_box::State::new(vec![]),
             voice_command_tx: None,
+            vosk_model: None,
+            selected_model: None,
+            vosk_models: combo_box::State::new(vec![]),
         };
         if let Some(cfg_data) = config
             && let Ok(cfg) = file_io::from_file(&cfg_data.default_profile)
         {
             working_state.active_profile = Some(cfg);
             working_state.load_profiles();
+            working_state.load_models();
         }
         working_state
     }
@@ -90,6 +98,25 @@ impl MainUIState {
         }
     }
 
+    fn load_models(&mut self) {
+        if let Some(config) = &self.config
+            && let Ok(entries) = read_dir(&config.model_path)
+        {
+            for entry in entries.flatten() {
+                if entry.path().is_dir() {
+                    let model = entry.file_name().into_string().unwrap_or_default();
+                    self.vosk_models.push(model);
+                }
+            }
+            let selection = self
+                .vosk_models
+                .options()
+                .iter()
+                .find(|m| **m == config.default_model);
+            self.vosk_models = State::with_selection(self.vosk_models.options().into(), selection);
+        }
+    }
+
     pub fn view(&self) -> Element<'_, MainUIMessage> {
         let profile_select = combo_box(
             &self.combo_profiles,
@@ -97,15 +124,24 @@ impl MainUIState {
             self.selected_profile.as_ref(),
             MainUIMessage::SelectProfile,
         );
-        let content = row![
-            profile_select,
-            toggler(self.is_recording)
-                .on_toggle(MainUIMessage::ToggleRecording)
-                .label("Toggle Listening"),
-            column![button("Profile Details").on_press(MainUIMessage::EditProfile),].spacing(5)
+        let model_select = combo_box(
+            &self.vosk_models,
+            "Model:",
+            self.selected_model.as_ref(),
+            MainUIMessage::SelectModel,
+        );
+        let content = column![
+            row![model_select],
+            row![
+                profile_select,
+                toggler(self.is_recording)
+                    .on_toggle(MainUIMessage::ToggleRecording)
+                    .label("Toggle Listening"),
+                column![button("Profile Details").on_press(MainUIMessage::EditProfile),].spacing(5)
+            ]
         ]
-        .spacing(20)
-        .padding(10);
+        .padding(10)
+        .spacing(10);
         let window = container(content);
         if let Some(dialog) = &self.modal_dialog {
             dialog.apply(window.into())
@@ -118,7 +154,11 @@ impl MainUIState {
         if let Some(profile) = &self.active_profile {
             let (tx, rx) = mpsc::channel(10);
             self.voice_command_tx = Some(tx);
-            if let Err(e) = primary_dispatcher::begin_dispatch(profile.actions.clone(), rx) {
+            if let Err(e) = primary_dispatcher::begin_dispatch(
+                profile.actions.clone(),
+                rx,
+                self.selected_model.clone().unwrap_or("".to_string()),
+            ) {
                 if let Some(diag) = &mut self.modal_dialog {
                     diag.show_message("Error Listening", &e.to_string());
                 }
@@ -168,6 +208,12 @@ impl MainUIState {
                     self.selected_profile = Some(prof);
                 } else if let Some(diag) = &mut self.modal_dialog {
                     diag.show_message("Please", "Stop listening before changing profiles.");
+                }
+            }
+            MainUIMessage::SelectModel(model) => {
+                self.selected_model = Some(model.clone());
+                if let Some(config) = &self.config {
+                    self.vosk_model = Some(config.model_path.clone() + &model);
                 }
             }
             MainUIMessage::EditProfile => {

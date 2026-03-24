@@ -38,8 +38,8 @@ impl AudioThunk for Vec<f32> {
 /// I am happy with it at this point, except for the need to thunk to Vosk.
 /// I suspect the thunking may be causing delays, but I have not found a
 /// microphone input library that records data as i16
-async fn voice_req_loop(vr_context: &mut VoiceReqContext) -> Result<(), Box<dyn Error>> {
-    let vmodel = Model::new("./vosk-model-small-en-us-0.15").ok_or("Failed to load Vosk model")?;
+async fn voice_req_loop(mut vr_context: VoiceReqContext) -> Result<(), Box<dyn Error>> {
+    let vmodel = Model::new(vr_context.vosk_path.clone()).ok_or("Failed to load Vosk model")?;
     let mut vrec = Recognizer::new_with_grammar(&vmodel, 16000.0, &vr_context.grammar[..])
         .ok_or("Failed to create Vosk recognizer")?;
 
@@ -101,6 +101,23 @@ pub struct VoiceReqContext {
     tx_results: mpsc::Sender<VoiceReqResults>,
     rx_commands: mpsc::Receiver<VoiceReqCommands>,
     grammar: Vec<String>,
+    vosk_path: String,
+}
+
+impl VoiceReqContext {
+    pub fn new(
+        rx_commands: mpsc::Receiver<VoiceReqCommands>,
+        tx_results: mpsc::Sender<VoiceReqResults>,
+        grammar: Vec<String>,
+        vosk_path: String,
+    ) -> Self {
+        Self {
+            tx_results,
+            rx_commands,
+            grammar,
+            vosk_path,
+        }
+    }
 }
 
 /// # Start a thread for voice recognition.
@@ -108,18 +125,9 @@ pub struct VoiceReqContext {
 ///
 /// This function reports results on any voice recognition
 /// for command processing, look at [crate::primary_dispatcher]
-pub fn start_voice_req(
-    rx_commands: mpsc::Receiver<VoiceReqCommands>,
-    tx_results: mpsc::Sender<VoiceReqResults>,
-    grammar: Vec<String>,
-) -> tokio::task::JoinHandle<()> {
+pub fn start_voice_req(context: VoiceReqContext) -> tokio::task::JoinHandle<()> {
     tokio::spawn(async move {
-        let mut vr = VoiceReqContext {
-            rx_commands,
-            tx_results,
-            grammar,
-        };
-        if let Err(e) = voice_req_loop(&mut vr).await {
+        if let Err(e) = voice_req_loop(context).await {
             eprintln!("Voice recognition error: {}", e);
         }
     })

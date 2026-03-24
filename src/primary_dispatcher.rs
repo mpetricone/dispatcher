@@ -2,6 +2,7 @@ use crate::action_record::ActionRecord;
 use crate::input_dispatcher;
 use crate::voice_req;
 use crate::voice_req::VoiceReqCommands;
+use crate::voice_req::VoiceReqContext;
 use crate::voice_req::VoiceReqResults;
 use std::io;
 use std::sync::{Arc, Mutex};
@@ -30,6 +31,7 @@ fn process_voice_input(recognized_string: &str, action_list: &[ActionRecord]) {
 pub async fn listener_loop(
     rx_commands: mpsc::Receiver<VoiceReqCommands>,
     action_list: Vec<ActionRecord>,
+    vosk_path: String,
 ) {
     let (tx_results, mut rx_results) = mpsc::channel(50);
 
@@ -38,7 +40,12 @@ pub async fn listener_loop(
         .map(|x| x.activator_text.clone().to_lowercase())
         .collect();
     activators.push("[unk]".to_string());
-    let _handle = voice_req::start_voice_req(rx_commands, tx_results, activators);
+    let _handle = voice_req::start_voice_req(VoiceReqContext::new(
+        rx_commands,
+        tx_results,
+        activators,
+        vosk_path,
+    ));
 
     while let Some(r) = rx_results.recv().await {
         match r {
@@ -51,10 +58,11 @@ pub async fn listener_loop(
 pub fn begin_dispatch(
     action_list: Vec<ActionRecord>,
     rx_commands: mpsc::Receiver<VoiceReqCommands>,
+    vosk_path: String,
 ) -> io::Result<()> {
     let rt = Builder::new_current_thread().enable_all().build()?;
     thread::spawn(move || {
-        rt.block_on(listener_loop(rx_commands, action_list));
+        rt.block_on(listener_loop(rx_commands, action_list, vosk_path));
     });
     Ok(())
 }
