@@ -113,6 +113,7 @@ impl MainUIState {
                 .options()
                 .iter()
                 .find(|m| **m == config.default_model);
+            self.selected_model = selection.cloned();
             self.vosk_models = State::with_selection(self.vosk_models.options().into(), selection);
         }
     }

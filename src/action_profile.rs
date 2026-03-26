@@ -84,8 +84,8 @@ mod tests {
     use crate::file_io;
     #[test]
     fn test_serialze_profile() -> Result<(), Box<dyn Error>> {
-        let ap1 = ActionProfile::new(vec![], "Test Profile");
-        file_io::to_file("target/debug/testprofile1.pro", true, &ap1)?;
+        let mut ap1 = ActionProfile::new(vec![], "Test Profile");
+        file_io::to_file("target/debug/testprofile1.pro", true, &mut ap1)?;
         let ap2 = file_io::from_file("target/debug/testprofile1.pro")?;
         assert_eq!(ap1, ap2);
         Ok(())

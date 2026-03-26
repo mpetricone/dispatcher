@@ -68,7 +68,7 @@ impl Config {
                 model_path: model_path.to_string_lossy().to_string(),
                 default_profile: default_profile.to_string_lossy().to_string(),
                 default_profile_name: empty_profile.name.clone(),
-                default_model: model_path.to_string_lossy().to_string(),
+                default_model: "vosk-model-small-en-us-0.15".to_string(),
             };
             file_io::to_file(&config_file.to_string_lossy(), false, &mut conf)?;
             Ok(conf)
@@ -86,7 +86,7 @@ mod tests {
         let config =
             Config::build().expect("Test Failed, have you run the install.sh script first?");
         // we use action profile since it is the first fully serializable struct
-        let profile = ActionProfile::new(vec![], "test");
+        let mut profile = ActionProfile::new(vec![], "test");
         profile.to_file(&config).unwrap();
         let profile2 = ActionProfile::from_file("test", &config).unwrap();
         //The vecs are empty, not bothering.
