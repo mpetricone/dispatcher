@@ -155,16 +155,18 @@ impl MainUIState {
         if let Some(profile) = &self.active_profile {
             let (tx, rx) = mpsc::channel(10);
             self.voice_command_tx = Some(tx);
-            if let Err(e) = primary_dispatcher::begin_dispatch(
-                profile.actions.clone(),
-                rx,
-                self.selected_model.clone().unwrap_or("".to_string()),
-            ) {
-                if let Some(diag) = &mut self.modal_dialog {
-                    diag.show_message("Error Listening", &e.to_string());
+            if let Some(conf) = &self.config {
+                if let Err(e) = primary_dispatcher::begin_dispatch(
+                    profile.actions.clone(),
+                    rx,
+                    conf.model_with_path(&self.selected_model.clone().unwrap_or("".to_string())),
+                ) {
+                    if let Some(diag) = &mut self.modal_dialog {
+                        diag.show_message("Error Listening", &e.to_string());
+                    }
+                } else {
+                    self.is_recording = true;
                 }
-            } else {
-                self.is_recording = true;
             }
         }
     }

@@ -2,6 +2,8 @@ use crate::action_profile::ActionProfile;
 use crate::file_io;
 use crate::normalize::Normalizer;
 use serde::{Deserialize, Serialize};
+use std::path::PathBuf;
+
 
 /// Application configuration.
 #[derive(Debug, Clone, Serialize, Deserialize)]
@@ -73,6 +75,13 @@ impl Config {
             file_io::to_file(&config_file.to_string_lossy(), false, &mut conf)?;
             Ok(conf)
         }
+    }
+
+    pub fn model_with_path(&self, model: &str) -> String {
+        let mut path = PathBuf::new();
+        path.push(&self.model_path);
+        path.push(model);
+        path.to_string_lossy().to_string()
     }
 }
 
