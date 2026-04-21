@@ -63,12 +63,15 @@ impl MainUIState {
             selected_model: None,
             vosk_models: combo_box::State::new(vec![]),
         };
-        if let Some(cfg_data) = config
-            && let Ok(cfg) = file_io::from_file(&cfg_data.default_profile)
-        {
-            working_state.active_profile = Some(cfg);
-            working_state.load_profiles();
-            working_state.load_models();
+        if let Some(cfg_data) = &working_state.config {
+            match file_io::from_file(&cfg_data.default_profile) {
+                Ok(cfg) =>{
+                    working_state.active_profile = Some(cfg);
+                    working_state.load_profiles();
+                    working_state.load_models();
+                }
+                Err(e) => eprintln!("{}", e.to_string()) ,
+            }
         }
         working_state
     }

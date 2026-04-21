@@ -33,6 +33,16 @@ impl Normalizer for Config {
 
 // Todo: refactor using trait FilesFromConfig.
 impl Config {
+
+    fn empty() -> Config {
+        Config {
+            profile_path: "".to_string(),
+            model_path: "".to_string(),
+            default_profile: "".to_string(),
+            default_profile_name: "".to_string(),
+            default_model: "".to_string(),
+        }
+    }
     /// Creates a configuration by loading filesfrom the configuration directory.
     /// We use crate [dirs] to determine standard directories.
     pub fn build() -> Result<Config, Box<dyn std::error::Error>> {
@@ -54,27 +64,26 @@ impl Config {
         }
         let mut config_file = config_path.clone();
         config_file.push("dispatcher.json");
+        let mut conf;
         if config_file.exists() {
-            file_io::from_file(&config_file.to_string_lossy())
+           conf = file_io::from_file(&config_file.to_string_lossy())?
         } else {
-            let mut empty_profile = ActionProfile::new(vec![], "default");
             let mut default_profile = profile_path.clone();
             default_profile.push("default.pro");
-            file_io::to_file(
-                &default_profile.to_string_lossy(),
-                false,
-                &mut empty_profile,
-            )?;
-            let mut conf = Config {
+            conf = Config {
                 profile_path: profile_path.to_string_lossy().to_string(),
                 model_path: model_path.to_string_lossy().to_string(),
                 default_profile: default_profile.to_string_lossy().to_string(),
-                default_profile_name: empty_profile.name.clone(),
+                default_profile_name: "default".to_string(),
                 default_model: "vosk-model-small-en-us-0.15".to_string(),
             };
+
             file_io::to_file(&config_file.to_string_lossy(), false, &mut conf)?;
-            Ok(conf)
         }
+        if !PathBuf::from(&conf.default_profile).exists() {
+            file_io::to_file(&conf.default_profile, false, &mut ActionProfile::new(vec![], &conf.default_profile_name))?;
+        }
+        Ok(conf)
     }
 
     pub fn model_with_path(&self, model: &str) -> String {
