@@ -65,12 +65,12 @@ impl MainUIState {
         };
         if let Some(cfg_data) = &working_state.config {
             match file_io::from_file(&cfg_data.default_profile) {
-                Ok(cfg) =>{
+                Ok(cfg) => {
                     working_state.active_profile = Some(cfg);
                     working_state.load_profiles();
                     working_state.load_models();
                 }
-                Err(e) => eprintln!("{}", e.to_string()) ,
+                Err(e) => eprintln!("{}", e),
             }
         }
         working_state
@@ -163,6 +163,7 @@ impl MainUIState {
                     profile.actions.clone(),
                     rx,
                     conf.model_with_path(&self.selected_model.clone().unwrap_or("".to_string())),
+                    conf.default_dispatcher_config.clone(),
                 ) {
                     if let Some(diag) = &mut self.modal_dialog {
                         diag.show_message("Error Listening", &e.to_string());

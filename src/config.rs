@@ -4,7 +4,6 @@ use crate::normalize::Normalizer;
 use serde::{Deserialize, Serialize};
 use std::path::PathBuf;
 
-
 /// Application configuration.
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct Config {
@@ -13,6 +12,20 @@ pub struct Config {
     pub default_profile: String,
     pub default_profile_name: String,
     pub default_model: String,
+    pub default_dispatcher_config: DispatcherConfig,
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct DispatcherConfig {
+    pub default_command_delay: u32,
+}
+
+impl Default for DispatcherConfig {
+    fn default() -> Self {
+        Self {
+            default_command_delay: 300,
+        }
+    }
 }
 
 /// Trait for types that can be serialized to and deserialized from a file using a [Config].
@@ -33,16 +46,6 @@ impl Normalizer for Config {
 
 // Todo: refactor using trait FilesFromConfig.
 impl Config {
-
-    fn empty() -> Config {
-        Config {
-            profile_path: "".to_string(),
-            model_path: "".to_string(),
-            default_profile: "".to_string(),
-            default_profile_name: "".to_string(),
-            default_model: "".to_string(),
-        }
-    }
     /// Creates a configuration by loading filesfrom the configuration directory.
     /// We use crate [dirs] to determine standard directories.
     pub fn build() -> Result<Config, Box<dyn std::error::Error>> {
@@ -66,7 +69,7 @@ impl Config {
         config_file.push("dispatcher.json");
         let mut conf;
         if config_file.exists() {
-           conf = file_io::from_file(&config_file.to_string_lossy())?
+            conf = file_io::from_file(&config_file.to_string_lossy())?
         } else {
             let mut default_profile = profile_path.clone();
             default_profile.push("default.pro");
@@ -76,12 +79,17 @@ impl Config {
                 default_profile: default_profile.to_string_lossy().to_string(),
                 default_profile_name: "default".to_string(),
                 default_model: "vosk-model-small-en-us-0.15".to_string(),
+                default_dispatcher_config: DispatcherConfig::default(),
             };
 
             file_io::to_file(&config_file.to_string_lossy(), false, &mut conf)?;
         }
         if !PathBuf::from(&conf.default_profile).exists() {
-            file_io::to_file(&conf.default_profile, false, &mut ActionProfile::new(vec![], &conf.default_profile_name))?;
+            file_io::to_file(
+                &conf.default_profile,
+                false,
+                &mut ActionProfile::new(vec![], &conf.default_profile_name),
+            )?;
         }
         Ok(conf)
     }
