@@ -102,7 +102,6 @@ impl Config {
         path.push(model);
         path.to_string_lossy().to_string()
     }
-
 }
 
 #[cfg(test)]

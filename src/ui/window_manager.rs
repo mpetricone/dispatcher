@@ -2,12 +2,12 @@
 //! Handles application windows and events.
 //! It can delegate to other window managers.
 //! See [iced] Scaling Applications
+use crate::config;
 use crate::config::Config;
+use crate::ui::config_edit;
 use crate::ui::main_ui;
 use crate::ui::message_display;
 use crate::ui::profile_manager;
-use crate::ui::config_edit;
-use crate::config;
 use iced::{Element, Task, exit};
 use std::sync::Arc;
 use std::sync::Mutex;
@@ -132,13 +132,12 @@ impl WindowManager {
                                 self.config.lock().unwrap().clone(),
                             ));
                             Task::none()
-                        },
+                        }
                     }
                 } else {
                     Task::none()
                 }
             }
-
         }
     }
 

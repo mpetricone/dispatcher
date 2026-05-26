@@ -146,7 +146,8 @@ impl MainUIState {
                 column![
                     button("Profile Details").on_press(MainUIMessage::EditProfile),
                     button("Edit Config").on_press(MainUIMessage::EditConfig),
-                ].spacing(5)
+                ]
+                .spacing(5)
             ]
         ]
         .padding(10)
