@@ -20,7 +20,7 @@ pub fn send_input_sequence(
                 rdev::simulate(&e.event_type)?;
                 let mut final_delay = delay;
                 if let Some(e) = e.duration
-                    && e.as_millis() > 500u128
+                    && e > delay
                 {
                     final_delay = e
                 }

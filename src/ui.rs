@@ -6,3 +6,4 @@ pub mod profile;
 pub mod profile_edit;
 pub mod profile_manager;
 pub mod window_manager;
+pub mod config_edit;

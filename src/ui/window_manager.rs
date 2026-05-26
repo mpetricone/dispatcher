@@ -6,6 +6,8 @@ use crate::config::Config;
 use crate::ui::main_ui;
 use crate::ui::message_display;
 use crate::ui::profile_manager;
+use crate::ui::config_edit;
+use crate::config;
 use iced::{Element, Task, exit};
 use std::sync::Arc;
 use std::sync::Mutex;
@@ -14,12 +16,14 @@ enum Window {
     MainUI(main_ui::MainUIState),
     Profile(profile_manager::ProfileManager),
     MessageDisplay(message_display::MessageDisplay),
+    ConfigEdit(config_edit::ConfigEdit),
 }
 
 pub enum Message {
     MainUI(main_ui::MainUIMessage),
     Profile(profile_manager::Message),
     MessageDisplay(message_display::MessageDisplayMessages),
+    ConfigEdit(config_edit::ConfigEditMessage),
 }
 
 pub struct WindowManager {
@@ -69,6 +73,13 @@ impl WindowManager {
                             }
                             Task::none()
                         }
+                        main_ui::MainUIAction::EditConfig => {
+                            if let Ok(config) = config::Config::build() {
+                                let config_edit = config_edit::ConfigEdit::new(&config);
+                                self.window = Window::ConfigEdit(config_edit);
+                            }
+                            Task::none()
+                        }
                         main_ui::MainUIAction::None => Task::none(),
                     }
                 } else {
@@ -112,6 +123,22 @@ impl WindowManager {
                     Task::none()
                 }
             }
+            Message::ConfigEdit(message) => {
+                if let Window::ConfigEdit(config) = &mut self.window {
+                    match config.update(message) {
+                        config_edit::ConfigEditAction::None => Task::none(),
+                        config_edit::ConfigEditAction::Close => {
+                            self.window = Window::MainUI(main_ui::MainUIState::new(
+                                self.config.lock().unwrap().clone(),
+                            ));
+                            Task::none()
+                        },
+                    }
+                } else {
+                    Task::none()
+                }
+            }
+
         }
     }
 
@@ -120,6 +147,7 @@ impl WindowManager {
             Window::MainUI(main) => main.view().map(Message::MainUI),
             Window::Profile(profile) => profile.view().map(Message::Profile),
             Window::MessageDisplay(display) => display.view().map(Message::MessageDisplay),
+            Window::ConfigEdit(config) => config.view().map(Message::ConfigEdit),
         }
     }
 }

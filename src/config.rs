@@ -9,6 +9,7 @@ use std::path::PathBuf;
 pub struct Config {
     pub profile_path: String,
     pub model_path: String,
+    pub config_path: String,
     pub default_profile: String,
     pub default_profile_name: String,
     pub default_model: String,
@@ -80,6 +81,7 @@ impl Config {
                 default_profile_name: "default".to_string(),
                 default_model: "vosk-model-small-en-us-0.15".to_string(),
                 default_dispatcher_config: DispatcherConfig::default(),
+                config_path: config_file.to_string_lossy().to_string(),
             };
 
             file_io::to_file(&config_file.to_string_lossy(), false, &mut conf)?;
@@ -100,6 +102,7 @@ impl Config {
         path.push(model);
         path.to_string_lossy().to_string()
     }
+
 }
 
 #[cfg(test)]

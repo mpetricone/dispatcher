@@ -34,11 +34,13 @@ pub enum MainUIMessage {
     EditProfile,
     ModalAffirmative,
     ModalNegative,
+    EditConfig,
 }
 
 pub enum MainUIAction {
     EditProfile(ActionProfile),
     NewProfile(ActionProfile),
+    EditConfig,
     None,
 }
 
@@ -141,7 +143,10 @@ impl MainUIState {
                 toggler(self.is_recording)
                     .on_toggle(MainUIMessage::ToggleRecording)
                     .label("Toggle Listening"),
-                column![button("Profile Details").on_press(MainUIMessage::EditProfile),].spacing(5)
+                column![
+                    button("Profile Details").on_press(MainUIMessage::EditProfile),
+                    button("Edit Config").on_press(MainUIMessage::EditConfig),
+                ].spacing(5)
             ]
         ]
         .padding(10)
@@ -234,6 +239,11 @@ impl MainUIState {
                     );
                 }
             }
+            MainUIMessage::EditConfig => {
+                self.stop_listening();
+                action = MainUIAction::EditConfig;
+            }
+
             MainUIMessage::ModalAffirmative | MainUIMessage::ModalNegative => {
                 if let Some(dialog) = &mut self.modal_dialog {
                     dialog.show(false);

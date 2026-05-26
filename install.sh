@@ -44,7 +44,7 @@ function purge() {
 }
 
 function installer() {
-    cargo build --release || { echo "Failed to build dispatcher."; exit 1; }
+    cargo build || { echo "Failed to build dispatcher."; exit 1; }
 
     if [ ! -d "$config_path" ]; then
         mkdir -p "$config_path" || { echo "Failed to create config path"; exit 1; };
