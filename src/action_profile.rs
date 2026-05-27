@@ -72,7 +72,7 @@ impl ActionProfile {
         name: String,
         activator_text: String,
     ) -> Result<(), Box<dyn Error>> {
-        let new_r = ActionRecord::build(name, activator_text, Duration::from_secs(10))?;
+        let new_r = ActionRecord::build(name, activator_text, Duration::from_secs(10), None)?;
         self.actions.push(new_r);
         Ok(())
     }

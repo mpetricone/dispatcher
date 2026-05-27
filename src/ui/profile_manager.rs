@@ -53,7 +53,7 @@ impl ProfileManager {
                             } else {
                                 self.window = Window::ProfileEdit(profile_edit::ProfileEdit::new(
                                     None,
-                                    ActionRecord::new("", "", vec![]),
+                                    ActionRecord::new("", "", vec![], None),
                                 ));
                             }
                         }

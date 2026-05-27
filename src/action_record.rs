@@ -5,6 +5,7 @@ use rdev;
 use serde::{Deserialize, Serialize};
 use std::error::Error;
 use std::fmt::Display;
+use std::path::PathBuf;
 use std::thread;
 use std::time::Duration;
 
@@ -14,6 +15,7 @@ pub struct ActionRecord {
     pub name: String,
     pub activator_text: String,
     pub action_stream: Vec<InputEvent>,
+    pub completion_audio_path: Option<PathBuf>,
     // Placeholder Audio output
 }
 
@@ -46,11 +48,17 @@ impl Display for ActionRecord {
 }
 
 impl ActionRecord {
-    pub fn new(name: &str, activator_text: &str, action_stream: Vec<InputEvent>) -> ActionRecord {
+    pub fn new(
+        name: &str,
+        activator_text: &str,
+        action_stream: Vec<InputEvent>,
+        completion_audio_path: Option<PathBuf>,
+    ) -> ActionRecord {
         ActionRecord {
             name: name.to_string(),
             activator_text: activator_text.to_string(),
             action_stream,
+            completion_audio_path,
         }
     }
 
@@ -60,12 +68,14 @@ impl ActionRecord {
         name: String,
         activator_text: String,
         capture_time: Duration,
+        completion_audio_path: Option<PathBuf>,
     ) -> Result<ActionRecord, Box<dyn Error>> {
         let empty_vec = Vec::new();
         let mut record = ActionRecord {
             name,
             activator_text,
             action_stream: empty_vec,
+            completion_audio_path,
         };
         record.capture_actions(capture_time)?;
         Ok(record)
