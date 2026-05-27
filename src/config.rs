@@ -14,6 +14,7 @@ pub struct Config {
     pub default_profile_name: String,
     pub default_model: String,
     pub default_dispatcher_config: DispatcherConfig,
+    pub audio_library_path: Option<PathBuf>,
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
@@ -82,6 +83,7 @@ impl Config {
                 default_model: "vosk-model-small-en-us-0.15".to_string(),
                 default_dispatcher_config: DispatcherConfig::default(),
                 config_path: config_file.to_string_lossy().to_string(),
+                audio_library_path: None,
             };
 
             file_io::to_file(&config_file.to_string_lossy(), false, &mut conf)?;

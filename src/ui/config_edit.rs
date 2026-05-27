@@ -2,11 +2,13 @@ use crate::config::Config;
 use crate::file_io;
 use iced::Element;
 use iced::widget::{button, column, row, text, text_input};
+use std::path::PathBuf;
 
 pub struct ConfigEdit {
     config: Config,
     default_ddelay: u32,
     error_message: String,
+    audio_library_path: String,
 }
 
 #[derive(Debug, Clone)]
@@ -14,6 +16,7 @@ pub enum ConfigEditMessage {
     Save,
     Cancel,
     DDelayChanged(String),
+    AudioLibraryPathChanged(String),
 }
 
 pub enum ConfigEditAction {
@@ -23,10 +26,17 @@ pub enum ConfigEditAction {
 
 impl ConfigEdit {
     pub fn new(config: &Config) -> Self {
+        let audio_library_path = config
+            .audio_library_path
+            .clone()
+            .unwrap_or_default()
+            .to_string_lossy()
+            .to_string();
         Self {
             config: config.clone(),
             default_ddelay: config.default_dispatcher_config.default_command_delay,
             error_message: "".to_string(),
+            audio_library_path,
         }
     }
 
@@ -42,12 +52,18 @@ impl ConfigEdit {
                 }
                 ConfigEditAction::Close
             }
-            ConfigEditMessage::Cancel => {
-                ConfigEditAction::Close
-            }
+            ConfigEditMessage::Cancel => ConfigEditAction::Close,
             ConfigEditMessage::DDelayChanged(ddelay) => {
                 self.default_ddelay = ddelay.parse().unwrap_or(self.default_ddelay);
                 self.config.default_dispatcher_config.default_command_delay = self.default_ddelay;
+                ConfigEditAction::None
+            }
+            ConfigEditMessage::AudioLibraryPathChanged(path) => {
+                self.audio_library_path = path;
+                let bpath = PathBuf::from(&self.audio_library_path);
+                if bpath.is_dir() {
+                    self.config.audio_library_path = Some(bpath);
+                }
                 ConfigEditAction::None
             }
         }
@@ -66,8 +82,14 @@ impl ConfigEdit {
                     button("Cancel").on_press(ConfigEditMessage::Cancel),
                 ]
             ],
+            column![
+                text("Audio library path:"),
+                text_input("", &self.audio_library_path)
+                    .on_input(ConfigEditMessage::AudioLibraryPathChanged)
+            ],
             row![text(&self.error_message)]
-        ];
+        ]
+        .spacing(4);
 
         choices.into()
     }
