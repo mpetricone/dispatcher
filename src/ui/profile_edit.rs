@@ -1,13 +1,17 @@
 //! # Profile Editing, namely, Actions
 use crate::action_record::{ActionRecord, ActionRecordStreamFormatted};
+use crate::file_io;
 use iced::Element;
-use iced::widget::{button, column, row, text, text_input};
+use iced::widget::{button, column, pick_list, row, text, text_input};
+use std::string::String;
 use std::time::Duration;
 
 pub struct ProfileEdit {
     pub action: ActionRecord,
     pub idx: Option<usize>,
+    audio_sources: Vec<String>,
     record_string: String,
+    audio_source_state: Option<String>,
 }
 
 #[derive(Clone)]
@@ -17,6 +21,7 @@ pub enum ProfileEditMessage {
     ToggleRecord,
     NameChanged(String),
     ActivatorChanged(String),
+    AudioSourcesChanged(String),
 }
 
 pub enum ProfileEditAction {
@@ -28,10 +33,21 @@ pub enum ProfileEditAction {
 impl ProfileEdit {
     pub fn new(idx: Option<usize>, action: ActionRecord) -> Self {
         let record_string = ActionRecordStreamFormatted(&action).to_string();
+        let mut audio_sources: Vec<String> = Vec::new();
+        if let Some(path) = &action.completion_audio_path {
+            if let Ok(p) = file_io::get_dir_list(path) {
+                audio_sources = p
+                    .into_iter()
+                    .map(|p| p.to_string_lossy().to_string())
+                    .collect();
+            }
+        }
         ProfileEdit {
             action,
             idx,
             record_string,
+            audio_sources: audio_sources,
+            audio_source_state: None,
         }
     }
 
@@ -60,6 +76,10 @@ impl ProfileEdit {
                 self.action.activator_text = activator;
                 ProfileEditAction::None
             }
+            ProfileEditMessage::AudioSourcesChanged(source) => {
+                self.audio_source_state = Some(source);
+                ProfileEditAction::None
+            }
         }
     }
 
@@ -84,6 +104,14 @@ impl ProfileEdit {
                 button("Save").on_press(ProfileEditMessage::Save),
             ]
             .spacing(10),
+            row![
+                pick_list(
+                    self.audio_sources.clone(),
+                    self.audio_source_state.clone(),
+                    ProfileEditMessage::AudioSourcesChanged
+                )
+                .placeholder("Select audio source")
+            ]
         ]
         .padding(20)
         .into()

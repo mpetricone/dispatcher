@@ -5,8 +5,10 @@ use serde;
 use serde::de;
 use serde_json;
 use std::error::Error;
-use std::fs::OpenOptions;
+use std::fs::{OpenOptions, read_dir};
+use std::io;
 use std::io::{BufReader, BufWriter};
+use std::path::{Path, PathBuf};
 ///
 /// This is designed to read any struct implementing [serde::Deserialize]
 /// from file in json format.
@@ -34,4 +36,10 @@ pub fn to_file<T: serde::Serialize + Normalizer>(
     let bufw = BufWriter::new(fh);
     data.normalize();
     Ok(serde_json::to_writer(bufw, &data)?)
+}
+
+pub fn get_dir_list(path: &Path) -> io::Result<Vec<PathBuf>> {
+    read_dir(path)?
+        .map(|entries| entries.map(|e| e.path()))
+        .collect()
 }
