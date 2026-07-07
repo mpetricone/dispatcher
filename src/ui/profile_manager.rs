@@ -49,11 +49,13 @@ impl ProfileManager {
                                 self.window = Window::ProfileEdit(profile_edit::ProfileEdit::new(
                                     idx,
                                     data[index].clone(),
+                                    self.config.clone(),
                                 ));
                             } else {
                                 self.window = Window::ProfileEdit(profile_edit::ProfileEdit::new(
                                     None,
                                     ActionRecord::new("", "", vec![], None),
+                                    self.config.clone(),
                                 ));
                             }
                         }

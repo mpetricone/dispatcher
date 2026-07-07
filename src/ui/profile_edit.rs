@@ -1,8 +1,10 @@
 //! # Profile Editing, namely, Actions
 use crate::action_record::{ActionRecord, ActionRecordStreamFormatted};
+use crate::config::Config;
 use crate::file_io;
 use iced::Element;
 use iced::widget::{button, column, pick_list, row, text, text_input};
+use std::path::PathBuf;
 use std::string::String;
 use std::time::Duration;
 
@@ -12,6 +14,7 @@ pub struct ProfileEdit {
     audio_sources: Vec<String>,
     record_string: String,
     audio_source_state: Option<String>,
+    //config: Config,
 }
 
 #[derive(Clone)]
@@ -31,10 +34,10 @@ pub enum ProfileEditAction {
 }
 
 impl ProfileEdit {
-    pub fn new(idx: Option<usize>, action: ActionRecord) -> Self {
+    pub fn new(idx: Option<usize>, action: ActionRecord, config: Config) -> Self {
         let record_string = ActionRecordStreamFormatted(&action).to_string();
         let mut audio_sources: Vec<String> = Vec::new();
-        if let Some(path) = &action.completion_audio_path {
+        if let Some(path) = &config.audio_library_path {
             if let Ok(p) = file_io::get_dir_list(path) {
                 audio_sources = p
                     .into_iter()
@@ -42,12 +45,16 @@ impl ProfileEdit {
                     .collect();
             }
         }
+        let mut audio_source_state = None;
+        if let Some(state) = action.completion_audio_path.clone() {
+            audio_source_state = Some(state.to_string_lossy().to_string());
+        }
         ProfileEdit {
             action,
             idx,
             record_string,
             audio_sources: audio_sources,
-            audio_source_state: None,
+            audio_source_state: audio_source_state,
         }
     }
 
@@ -77,7 +84,8 @@ impl ProfileEdit {
                 ProfileEditAction::None
             }
             ProfileEditMessage::AudioSourcesChanged(source) => {
-                self.audio_source_state = Some(source);
+                self.audio_source_state = Some(source.clone());
+                self.action.completion_audio_path = Some(PathBuf::from(source.clone()));
                 ProfileEditAction::None
             }
         }
@@ -99,19 +107,19 @@ impl ProfileEdit {
             .spacing(10),
             row![text("Recorded Events: "), text(&self.record_string),].spacing(10),
             row![
-                button("Record").on_press(ProfileEditMessage::ToggleRecord),
-                button("Cancel").on_press(ProfileEditMessage::Cancel),
-                button("Save").on_press(ProfileEditMessage::Save),
-            ]
-            .spacing(10),
-            row![
                 pick_list(
                     self.audio_sources.clone(),
                     self.audio_source_state.clone(),
                     ProfileEditMessage::AudioSourcesChanged
                 )
                 .placeholder("Select audio source")
+            ],
+            row![
+                button("Record").on_press(ProfileEditMessage::ToggleRecord),
+                button("Cancel").on_press(ProfileEditMessage::Cancel),
+                button("Save").on_press(ProfileEditMessage::Save),
             ]
+            .spacing(10),
         ]
         .padding(20)
         .into()
