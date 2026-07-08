@@ -1,7 +1,7 @@
 //! # Profile Window Manager
 //! Controls what Profile window is shown, and handles Profile events.
 use crate::action_profile::ActionProfile;
-use crate::action_record::ActionRecord;
+use crate::action_record::{ActionRecord, AudioPath};
 use crate::config::{Config, FilesFromConfig};
 use crate::ui::profile;
 use crate::ui::profile_edit;
@@ -54,7 +54,7 @@ impl ProfileManager {
                             } else {
                                 self.window = Window::ProfileEdit(profile_edit::ProfileEdit::new(
                                     None,
-                                    ActionRecord::new("", "", vec![], None),
+                                    ActionRecord::new("", "", vec![], AudioPath::default()),
                                     self.config.clone(),
                                 ));
                             }

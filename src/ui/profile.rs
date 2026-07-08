@@ -1,6 +1,6 @@
 //! # Profile Management
 use crate::action_profile::ActionProfile;
-use crate::action_record::ActionRecord;
+use crate::action_record::{ActionRecord, AudioPath};
 use iced::widget::{button, column, row, text};
 use iced::{Font, Renderer, Theme};
 use iced_aw::{selection_list::SelectionList, style::selection_list::primary};
@@ -108,7 +108,10 @@ impl Profile {
                 self.selected_name = name.name.clone();
             }
             ProfileMessage::Add => {
-                return ProfileAction::Edit(None, vec![ActionRecord::new("", "", vec![], None)]);
+                return ProfileAction::Edit(
+                    None,
+                    vec![ActionRecord::new("", "", vec![], AudioPath::default())],
+                );
             }
             ProfileMessage::Edit => {
                 return ProfileAction::Edit(self.selected, self.profile.actions.clone());

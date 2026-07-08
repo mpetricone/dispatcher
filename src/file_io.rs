@@ -43,3 +43,19 @@ pub fn get_dir_list(path: &Path) -> io::Result<Vec<PathBuf>> {
         .map(|entries| entries.map(|e| e.path()))
         .collect()
 }
+
+pub fn get_file_list_recursive(path: &Path) -> io::Result<Vec<PathBuf>> {
+    let mut ret_v = Vec::new();
+    if path.is_dir() {
+        for entry in read_dir(path)? {
+            let entry = entry?;
+            let entry_path = entry.path();
+            if entry_path.is_dir() {
+                ret_v.extend(get_file_list_recursive(&entry.path())?);
+            } else {
+                ret_v.push(entry.path());
+            }
+        }
+    }
+    Ok(ret_v)
+}

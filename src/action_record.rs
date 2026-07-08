@@ -15,8 +15,14 @@ pub struct ActionRecord {
     pub name: String,
     pub activator_text: String,
     pub action_stream: Vec<InputEvent>,
-    pub completion_audio_path: Option<PathBuf>,
+    pub completion_audio_path: AudioPath,
     // Placeholder Audio output
+}
+
+#[derive(Serialize, Deserialize, Clone, PartialEq, Debug, Default)]
+pub struct AudioPath {
+    pub audio_path: Option<PathBuf>,
+    pub audio_file: Option<PathBuf>,
 }
 
 pub struct ActionRecordStreamFormatted<'a>(pub &'a ActionRecord);
@@ -52,7 +58,7 @@ impl ActionRecord {
         name: &str,
         activator_text: &str,
         action_stream: Vec<InputEvent>,
-        completion_audio_path: Option<PathBuf>,
+        completion_audio_path: AudioPath,
     ) -> ActionRecord {
         ActionRecord {
             name: name.to_string(),
@@ -68,7 +74,7 @@ impl ActionRecord {
         name: String,
         activator_text: String,
         capture_time: Duration,
-        completion_audio_path: Option<PathBuf>,
+        completion_audio_path: AudioPath,
     ) -> Result<ActionRecord, Box<dyn Error>> {
         let empty_vec = Vec::new();
         let mut record = ActionRecord {

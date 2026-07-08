@@ -14,6 +14,8 @@ pub struct ProfileEdit {
     audio_sources: Vec<String>,
     record_string: String,
     audio_source_state: Option<String>,
+    audio_files: Vec<String>,
+    audio_file_state: Option<String>,
     //config: Config,
 }
 
@@ -25,6 +27,7 @@ pub enum ProfileEditMessage {
     NameChanged(String),
     ActivatorChanged(String),
     AudioSourcesChanged(String),
+    AudioFileChanged(String),
 }
 
 pub enum ProfileEditAction {
@@ -46,15 +49,28 @@ impl ProfileEdit {
             }
         }
         let mut audio_source_state = None;
-        if let Some(state) = action.completion_audio_path.clone() {
+        let mut audio_files = Vec::new();
+        let mut audio_file_state = None;
+        if let Some(state) = action.completion_audio_path.audio_path.clone() {
             audio_source_state = Some(state.to_string_lossy().to_string());
+            if let Ok(files) = file_io::get_file_list_recursive(&state) {
+                audio_files = files
+                    .into_iter()
+                    .map(|p| p.to_string_lossy().to_string())
+                    .collect();
+            }
+        }
+        if let Some(state) = action.completion_audio_path.audio_file.clone() {
+            audio_file_state = Some(state.to_string_lossy().to_string());
         }
         ProfileEdit {
             action,
             idx,
             record_string,
-            audio_sources: audio_sources,
-            audio_source_state: audio_source_state,
+            audio_sources,
+            audio_source_state,
+            audio_files,
+            audio_file_state,
         }
     }
 
@@ -85,7 +101,12 @@ impl ProfileEdit {
             }
             ProfileEditMessage::AudioSourcesChanged(source) => {
                 self.audio_source_state = Some(source.clone());
-                self.action.completion_audio_path = Some(PathBuf::from(source.clone()));
+                self.action.completion_audio_path.audio_path = Some(PathBuf::from(source.clone()));
+                ProfileEditAction::None
+            }
+            ProfileEditMessage::AudioFileChanged(source) => {
+                self.audio_file_state = Some(source.clone());
+                self.action.completion_audio_path.audio_file = Some(PathBuf::from(source.clone()));
                 ProfileEditAction::None
             }
         }
@@ -113,7 +134,17 @@ impl ProfileEdit {
                     ProfileEditMessage::AudioSourcesChanged
                 )
                 .placeholder("Select audio source")
-            ],
+            ]
+            .spacing(10),
+            row![
+                pick_list(
+                    self.audio_files.clone(),
+                    self.audio_file_state.clone(),
+                    ProfileEditMessage::AudioFileChanged
+                )
+                .placeholder("Select Audio File.")
+            ]
+            .spacing(10),
             row![
                 button("Record").on_press(ProfileEditMessage::ToggleRecord),
                 button("Cancel").on_press(ProfileEditMessage::Cancel),

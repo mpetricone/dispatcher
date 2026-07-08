@@ -1,4 +1,4 @@
-use crate::action_record::ActionRecord;
+use crate::action_record::{ActionRecord, AudioPath};
 use crate::config::{Config, FilesFromConfig};
 use crate::file_io;
 use crate::normalize::Normalizer;
@@ -72,7 +72,12 @@ impl ActionProfile {
         name: String,
         activator_text: String,
     ) -> Result<(), Box<dyn Error>> {
-        let new_r = ActionRecord::build(name, activator_text, Duration::from_secs(10), None)?;
+        let new_r = ActionRecord::build(
+            name,
+            activator_text,
+            Duration::from_secs(10),
+            AudioPath::default(),
+        )?;
         self.actions.push(new_r);
         Ok(())
     }
