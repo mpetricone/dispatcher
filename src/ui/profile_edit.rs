@@ -40,13 +40,13 @@ impl ProfileEdit {
     pub fn new(idx: Option<usize>, action: ActionRecord, config: Config) -> Self {
         let record_string = ActionRecordStreamFormatted(&action).to_string();
         let mut audio_sources: Vec<String> = Vec::new();
-        if let Some(path) = &config.audio_library_path {
-            if let Ok(p) = file_io::get_dir_list(path) {
-                audio_sources = p
-                    .into_iter()
-                    .map(|p| p.to_string_lossy().to_string())
-                    .collect();
-            }
+        if let Some(path) = &config.audio_library_path
+            && let Ok(p) = file_io::get_dir_list(path)
+        {
+            audio_sources = p
+                .into_iter()
+                .map(|p| p.to_string_lossy().to_string())
+                .collect();
         }
         let mut audio_source_state = None;
         let mut audio_files = Vec::new();
