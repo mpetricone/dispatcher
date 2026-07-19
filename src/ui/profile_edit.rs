@@ -14,6 +14,8 @@ pub struct ProfileEdit {
     audio_sources: Vec<String>,
     record_string: String,
     audio_source_state: Option<String>,
+    audio_source_subtree_state: Option<String>,
+    audio_source_subtree: Vec<String>,
     audio_files: Vec<String>,
     audio_file_state: Option<String>,
     //config: Config,
@@ -28,6 +30,7 @@ pub enum ProfileEditMessage {
     ActivatorChanged(String),
     AudioSourcesChanged(String),
     AudioFileChanged(String),
+    AudioSourceSubtreeChanged(String),
 }
 
 pub enum ProfileEditAction {
@@ -51,14 +54,23 @@ impl ProfileEdit {
         let mut audio_source_state = None;
         let mut audio_files = Vec::new();
         let mut audio_file_state = None;
+        let mut audio_source_subtree_state = None;
+        let mut audio_source_subtree = Vec::new();
         if let Some(state) = action.completion_audio_path.audio_path.clone() {
             audio_source_state = Some(state.to_string_lossy().to_string());
-            if let Ok(files) = file_io::get_file_list_recursive(&state) {
+            if let Ok(files) = file_io::get_dir_list(&state) {
                 audio_files = files
                     .into_iter()
                     .map(|p| p.to_string_lossy().to_string())
                     .collect();
             }
+        }
+        if let Some(state) = action.completion_audio_path.audio_file.clone() {
+            audio_source_subtree_state = Some(state.to_string_lossy().to_string());
+            audio_source_subtree = state
+                .into_iter()
+                .map(|p| p.to_string_lossy().to_string())
+                .collect();
         }
         if let Some(state) = action.completion_audio_path.audio_file.clone() {
             audio_file_state = Some(state.to_string_lossy().to_string());
@@ -71,6 +83,8 @@ impl ProfileEdit {
             audio_source_state,
             audio_files,
             audio_file_state,
+            audio_source_subtree,
+            audio_source_subtree_state,
         }
     }
 
@@ -109,6 +123,19 @@ impl ProfileEdit {
                 self.action.completion_audio_path.audio_file = Some(PathBuf::from(source.clone()));
                 ProfileEditAction::None
             }
+            ProfileEditMessage::AudioSourceSubtreeChanged(source) => {
+                self.audio_source_subtree_state = Some(source.clone());
+                self.audio_source_subtree.clear();
+                if let Ok(result) = file_io::get_file_list_recursive(&PathBuf::from(source)) {
+                    self.audio_source_subtree = result
+                       .into_iter()
+                       .map(|p| p.to_string_lossy().to_string())
+                       .collect();
+               }
+                self.audio_file_state = None;
+                self.audio_files.clear();
+                ProfileEditAction::None
+            }
         }
     }
 
@@ -136,6 +163,13 @@ impl ProfileEdit {
                 .placeholder("Select audio source")
             ]
             .spacing(10),
+            row![
+                pick_list(
+                    self.audio_source_subtree.clone(),
+                    self.audio_source_subtree_state.clone(),
+                    ProfileEditMessage::AudioSourceSubtreeChanged
+                )
+            ],
             row![
                 pick_list(
                     self.audio_files.clone(),
