@@ -1,6 +1,6 @@
-use crate::input_recorder;
 use crate::input_recorder::InputEvent;
 use crate::normalize::Normalizer;
+use crate::{file_io, input_recorder};
 use rdev;
 use serde::{Deserialize, Serialize};
 use std::error::Error;
@@ -26,6 +26,21 @@ pub struct AudioPath {
 }
 
 pub struct ActionRecordStreamFormatted<'a>(pub &'a ActionRecord);
+
+impl AudioPath {
+    pub fn calculate_audio_sub_tree(&self) -> Vec<String> {
+        let mut result = Vec::new();
+        if let Some(path) = &self.audio_path
+            && let Ok(dir) = file_io::get_dir_list(path)
+        {
+            result = dir
+                .into_iter()
+                .map(|p| p.to_string_lossy().to_string())
+                .collect();
+        }
+        result
+    }
+}
 
 impl Normalizer for ActionRecord {
     fn normalize(&mut self) -> &mut Self {
