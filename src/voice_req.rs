@@ -1,7 +1,6 @@
+use cpal::{traits::DeviceTrait, traits::HostTrait};
 use std::error::Error;
 use tokio::sync::mpsc;
-use voice_stream::VoiceStream;
-use voice_stream::cpal::traits::StreamTrait;
 use vosk::{Model, Recognizer};
 
 /// # Vosk requires i16 audio data, but we can only capture in f32
@@ -42,6 +41,27 @@ async fn voice_req_loop(mut vr_context: VoiceReqContext) -> Result<(), Box<dyn E
     let vmodel = Model::new(vr_context.vosk_path.clone()).ok_or("Failed to load Vosk model")?;
     let mut vrec = Recognizer::new_with_grammar(&vmodel, 16000.0, &vr_context.grammar[..])
         .ok_or("Failed to create Vosk recognizer")?;
+
+    let cpal_host = cpal::default_host();
+    let cpal_device = cpal_host
+        .default_input_device()
+        .ok_or("No default input device")?;
+    let cpal_config = cpal::StreamConfig {
+        channels: 1,
+        sample_rate: 16000,
+        buffer_size: cpal::BufferSize::Default,
+    };
+    let (input_tx, input_rx) = mpsc::channel::<Vec<f32>>(128);
+    let input_stream = cpal_device.build_input_stream(
+        cpal_config,
+        move |data: &[f32], _| {
+            input_tx.try_send(data.to_vec());
+        },
+        |err| {
+            eprintln!("Input stream error: {}", err);
+        },
+        None,
+    )?;
 
     if let Ok((voice_stream, mut rx)) = VoiceStream::default_device() {
         voice_stream.play()?;
