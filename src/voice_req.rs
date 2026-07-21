@@ -1,4 +1,4 @@
-use cpal::{traits::DeviceTrait, traits::HostTrait};
+use cpal::{traits::DeviceTrait, traits::HostTrait, traits::StreamTrait};
 use std::error::Error;
 use tokio::sync::mpsc;
 use vosk::{Model, Recognizer};
@@ -51,11 +51,11 @@ async fn voice_req_loop(mut vr_context: VoiceReqContext) -> Result<(), Box<dyn E
         sample_rate: 16000,
         buffer_size: cpal::BufferSize::Default,
     };
-    let (input_tx, input_rx) = mpsc::channel::<Vec<f32>>(128);
+    let (input_tx, mut input_rx) = mpsc::channel::<Vec<f32>>(128);
     let input_stream = cpal_device.build_input_stream(
         cpal_config,
         move |data: &[f32], _| {
-            input_tx.try_send(data.to_vec());
+            let _ = input_tx.try_send(data.to_vec());
         },
         |err| {
             eprintln!("Input stream error: {}", err);
@@ -63,33 +63,29 @@ async fn voice_req_loop(mut vr_context: VoiceReqContext) -> Result<(), Box<dyn E
         None,
     )?;
 
-    if let Ok((voice_stream, mut rx)) = VoiceStream::default_device() {
-        voice_stream.play()?;
-        while let Some(r) = rx.recv().await {
-            if !r.is_empty() {
-                let _ = vrec.accept_waveform(&r.to_i16());
-                // Clippy, my fried, this is to allow future growth
-                #[allow(clippy::single_match)]
-                match vr_context.rx_commands.try_recv() {
-                    Ok(c) => {
-                        if c == VoiceReqCommands::Stop {
-                            let _ = vr_context.tx_results.send(VoiceReqResults::Halting).await;
-                            rx.close();
-                            continue;
-                        }
+    input_stream.play()?;
+
+    while let Some(f32_sample) = input_rx.recv().await {
+        if !f32_sample.is_empty() {
+            let _ = vrec.accept_waveform(&f32_sample.to_i16());
+            #[allow(clippy::single_match)]
+            match vr_context.rx_commands.try_recv() {
+                Ok(c) => {
+                    if c == VoiceReqCommands::Stop {
+                        let _ = vr_context.tx_results.send(VoiceReqResults::Halting).await;
+                        input_rx.close();
+                        continue;
                     }
-                    _ => {}
                 }
-                if let Some(heard) = vrec.final_result().single() {
-                    vr_context
-                        .tx_results
-                        .send(VoiceReqResults::Recognized(heard.text.to_string()))
-                        .await?;
-                }
+                _ => {}
+            }
+            if let Some(heard) = vrec.final_result().single() {
+                vr_context
+                    .tx_results
+                    .send(VoiceReqResults::Recognized(heard.text.to_string()))
+                    .await?;
             }
         }
-    } else {
-        return Err("Failed to open audio device".into());
     }
     drop(vrec);
     drop(vmodel);
