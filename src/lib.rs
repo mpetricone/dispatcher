@@ -25,3 +25,4 @@ pub mod normalize;
 pub mod primary_dispatcher;
 pub mod ui;
 pub mod voice_req;
+pub mod audio_playback;
