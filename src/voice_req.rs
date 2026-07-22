@@ -43,6 +43,10 @@ async fn voice_req_loop(mut vr_context: VoiceReqContext) -> Result<(), Box<dyn E
         .ok_or("Failed to create Vosk recognizer")?;
 
     let cpal_host = cpal::default_host();
+    let devices = cpal_host.input_devices().unwrap();
+    // This is to help debug audio input devices, leaving it in since it may be useful to users debugging audio input issues
+    let devices = devices.map(|d| d.description()).collect::<Vec<_>>();
+    eprintln!("{:?}", devices);
     let cpal_device = cpal_host
         .default_input_device()
         .ok_or("No default input device")?;
@@ -77,7 +81,9 @@ async fn voice_req_loop(mut vr_context: VoiceReqContext) -> Result<(), Box<dyn E
                         continue;
                     }
                 }
-                _ => {}
+                Err(_e) => {
+                    //eprintln!("{}", e)
+                }
             }
             if let Some(heard) = vrec.final_result().single() {
                 vr_context
