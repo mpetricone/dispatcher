@@ -153,8 +153,12 @@ impl Profile {
                     button(text("Close")).on_press(ProfileMessage::Close),
                     button(text("Save")).on_press(ProfileMessage::Save),
                 ]
+                .spacing(3)
+                .padding(3)
             ]
         ]
+        .padding(10)
+        .spacing(10)
         .into()
     }
 }
