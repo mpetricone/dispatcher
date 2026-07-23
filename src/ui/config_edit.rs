@@ -76,20 +76,25 @@ impl ConfigEdit {
                     text("Dispatcher Command Delay: "),
                     text_input("", &self.default_ddelay.to_string())
                         .on_input(ConfigEditMessage::DDelayChanged),
-                ],
+                ]
+                .spacing(10),
                 column![
                     button("Save").on_press(ConfigEditMessage::Save),
                     button("Cancel").on_press(ConfigEditMessage::Cancel),
                 ]
-            ],
+                .spacing(10)
+            ]
+            .spacing(10),
             column![
                 text("Audio library path:"),
                 text_input("", &self.audio_library_path)
                     .on_input(ConfigEditMessage::AudioLibraryPathChanged)
-            ],
-            row![text(&self.error_message)]
+            ]
+            .spacing(10),
+            row![text(&self.error_message)].spacing(20)
         ]
-        .spacing(4);
+        .padding(10)
+        .spacing(10);
 
         choices.into()
     }
