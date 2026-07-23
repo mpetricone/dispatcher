@@ -5,6 +5,7 @@ use crate::voice_req;
 use crate::voice_req::VoiceReqCommands;
 use crate::voice_req::VoiceReqContext;
 use crate::voice_req::VoiceReqResults;
+use crate::audio_playback;
 use std::io;
 use std::sync::{Arc, Mutex};
 use std::thread;
@@ -31,6 +32,8 @@ fn process_voice_input(
                 "Got and Eror during voice processing for command {}: {}",
                 a.name, e
             );
+        } else {
+            audio_playback::play_file(&a.completion_audio_path.audio_file.clone().unwrap_or_default().to_string_lossy());
         }
     }
 }

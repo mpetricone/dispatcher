@@ -1,5 +1,6 @@
 use std::fs::File;
 use std::io::BufReader;
+use std::time::Duration;
 
 /// Plays an audio file at the given path using the default audio device.
 /// Does nothing on error.
@@ -8,6 +9,6 @@ pub fn play_file(path: &str) {
         let Ok(open_path) = File::open(path) {
             let file = BufReader::new(open_path);
             let _player = rodio::play(sink_handle.mixer(), file).ok();
+            std::thread::sleep(Duration::from_secs(3));
         }
-        //Do we need a sleep? I hope not.
 }
